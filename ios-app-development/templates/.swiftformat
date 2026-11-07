@@ -1,0 +1,3 @@
+--indent 4
+--swiftversion 6.0
+--exclude .build,DerivedData,artifacts

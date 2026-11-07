@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#070b16" />
+    <title>Aurora Drift</title>
+    <link rel="icon" href="data:," />
+  </head>
+  <body>
+    <main id="app" class="app">
+      <h1 class="sr-only">Aurora Drift</h1>
+      <div class="stage">
+        <canvas
+          id="game"
+          class="game"
+          width="960"
+          height="600"
+          role="img"
+          aria-label="Aurora Drift game field: steer your ship with the arrow keys or W A S D to collect stars and avoid rocks."
+        ></canvas>
+
+        <section id="screen-menu" class="screen screen--menu" aria-labelledby="menu-title">
+          <p class="eyebrow">A five-minute arcade run</p>
+          <h2 id="menu-title" class="title">Aurora Drift</h2>
+          <p class="lede">
+            Collect the gold stars. Dodge the drifting rock. The field gets faster every
+            fifteen seconds — chain stars to raise your multiplier.
+          </p>
+          <div class="actions">
+            <button id="btn-start" class="button button--primary" type="button">Start run</button>
+          </div>
+          <p class="hint">
+            <kbd>←</kbd><kbd>→</kbd><kbd>↑</kbd><kbd>↓</kbd> or <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+            to steer · <kbd>P</kbd> to pause · <kbd>M</kbd> to mute
+          </p>
+        </section>
+
+        <section id="screen-pause" class="screen screen--compact" aria-labelledby="pause-title" hidden>
+          <h2 id="pause-title" class="title title--small">Paused</h2>
+          <p class="lede">Take a breath. The field will wait.</p>
+          <div class="actions">
+            <button id="btn-resume" class="button button--primary" type="button">Resume</button>
+            <button id="btn-quit" class="button" type="button">End run</button>
+          </div>
+        </section>
+
+        <section id="screen-over" class="screen screen--compact" aria-labelledby="over-title" hidden>
+          <p class="eyebrow">Run complete</p>
+          <h2 id="over-title" class="title title--small">Hull breached</h2>
+          <p class="lede">
+            You scored <strong id="over-score">0</strong>. Best: <strong id="over-best">0</strong>.
+          </p>
+          <div class="actions">
+            <button id="btn-restart" class="button button--primary" type="button">Play again</button>
+          </div>
+        </section>
+
+        <p id="live" class="sr-only" aria-live="assertive"></p>
+
+        <header class="hud" aria-label="Run status">
+          <p class="hud__group">
+            <span class="hud__label">Score</span>
+            <span id="hud-score" class="hud__value" data-testid="score">0</span>
+          </p>
+          <p class="hud__group">
+            <span class="hud__label">Best</span>
+            <span id="hud-best" class="hud__value" data-testid="best">0</span>
+          </p>
+          <p class="hud__group">
+            <span class="hud__label">Hull</span>
+            <span id="hud-lives" class="hud__value" data-testid="lives">3</span>
+          </p>
+          <p class="hud__group">
+            <span class="hud__label">Combo</span>
+            <span id="hud-combo" class="hud__value" data-testid="combo">×1</span>
+          </p>
+          <button id="btn-mute" class="icon-button" type="button" aria-pressed="false" aria-label="Mute sound">
+            <span aria-hidden="true">♪</span>
+          </button>
+          <button id="btn-pause" class="icon-button" type="button" aria-label="Pause game">❚❚</button>
+        </header>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+{
+  "$schema": "./tools/wg.schema.json",
+  "name": "Aurora Drift",
+  "devPort": 5173,
+  "previewPort": 4173,
+  "e2eDir": "dist-e2e",
+  "budgets": {
+    "jsGzipKb": 250,
+    "cssGzipKb": 40,
+    "totalGzipKb": 350,
+    "fpsMin": 50,
+    "longFrameRatioMax": 0.05
+  },
+  "playtest": {
+    "seconds": 60,
+    "bots": 4,
+    "seed": 1
+  }
+}

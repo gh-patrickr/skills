@@ -1,0 +1,10 @@
+# Generated build products — never commit
+*.xcodeproj
+*.xcworkspace
+DerivedData/
+.build/
+artifacts/
+*.xcresult
+.DS_Store
+xcuserdata/
+*.xcuserstate
