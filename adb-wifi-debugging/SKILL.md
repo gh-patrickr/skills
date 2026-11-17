@@ -14,6 +14,9 @@ If running inside a VM or NATed network, **mDNS discovery (`adb mdns services`) 
 3. Port scanning is unreliable (it may find nothing even when the port is open). **Ask the user** for the IP:port shown under *Settings > Device Options > Developer Options > Wireless debugging*.
    On Fire tablets, Developer Options are unlocked by tapping the serial number 7 times.
 4. `ping <DEVICE_IP>` checks reachability. RTT can be 10-1000 ms on Wi-Fi with power saving.
+5. **First-time TLS pairing from a new host/VM (`SSLV3_ALERT_CERTIFICATE_UNKNOWN`)**: if `adb connect <DEVICE_IP>:<PORT>` fails generically even though the TCP port is open, inspect `${TMPDIR:-/tmp}/adb.$(id -u).log`. `SSLV3_ALERT_CERTIFICATE_UNKNOWN` means this machine's `~/.android/adbkey` is unpaired (or you targeted the pairing port). Android 11+ Wireless Debugging uses **two separate ephemeral ports**:
+   - **Pairing port** (active *only* while *"Pair device with pairing code"* is open): run `adb pair <DEVICE_IP>:<PAIRING_PORT> <6_DIGIT_CODE>` — always pass `<6_DIGIT_CODE>` as a CLI argument, never omit it (omitting it hangs waiting on stdin).
+   - **Connect port** (shown on the main *Wireless debugging* screen under *"IP address & Port"*): run `adb connect <DEVICE_IP>:<CONNECT_PORT>` *after* pairing succeeds (`adb connect` against the pairing port always fails).
 
 ## 2. Pin a fixed port (do this once per reboot)
 
@@ -37,14 +40,25 @@ adb -s "$S" shell monkey -p PKG -c android.intent.category.LAUNCHER 1   # launch
 adb -s "$S" shell pidof PKG
 ```
 
+**Signature mismatch (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`) across host/VM builds:** when a VM's `~/.android/debug.keystore` differs from the machine that installed the APK, `install -r` fails and `uninstall -k` still rejects the new certificate. **Never** run a bare `adb uninstall PKG` before checking for user save files/profiles — on debuggable builds, back up app data to `/tmp` (never into the git repo) via `run-as`, reinstall, initialize once, and restore:
+```bash
+adb -s "$S" exec-out run-as PKG tar -cf - files shared_prefs databases 2>/dev/null > /tmp/pkg_data.tar
+adb -s "$S" uninstall PKG && adb -s "$S" install path/to/app-debug.apk
+adb -s "$S" shell monkey -p PKG -c android.intent.category.LAUNCHER 1
+adb -s "$S" shell am force-stop PKG
+cat /tmp/pkg_data.tar | adb -s "$S" shell run-as PKG tar -xf -
+```
+If `run-as` reports the installed build is not debuggable, ask the user or trigger the app's own export before uninstalling.
+
 **Keep the screen awake.** If the device locks, input and screenshots fail or show the lock screen:
 ```bash
 adb -s "$S" shell input keyevent KEYCODE_WAKEUP
 adb -s "$S" shell svc power stayon true                    # stay on while charging
+adb -s "$S" shell settings put global stay_on_while_plugged_in 7   # fallback when svc power is restricted
 adb -s "$S" shell settings put system screen_off_timeout 1800000
-adb -s "$S" shell dumpsys power | grep mWakefulness        # Awake / Asleep
+adb -s "$S" shell "dumpsys power | grep -E 'mWakefulness|Display Power'; dumpsys window | grep -E 'mCurrentFocus|isStatusBarKeyguard'"
 ```
-If a PIN lock screen is shown, ask the user to unlock. Do not try to bypass it.
+If a PIN/password lock screen is active, Android/Fire OS ignores `system screen_off_timeout` and turns the display off again in ~10 s, `wm dismiss-keyguard` / swipe only reveals the PIN pad, and `am start` launches *underneath* the lock screen. Ask the user once to unlock with their PIN and wait — do not try to bypass it or inject blind taps. When `Display Power: state=OFF`, `screencap -p` exits `0` with an **all-black PNG** (distinct from `FLAG_SECURE`, which returns `rc=1` or an empty file).
 
 ## 4. Screenshots: look at the app
 
@@ -66,6 +80,11 @@ adb -s "$S" shell input text "hello"
   `adb shell am broadcast -a PKG.DEBUG_ACTION --es cmd zoom_in` received by a debug-only BroadcastReceiver.
 - To find button positions, use `adb -s "$S" shell uiautomator dump /sdcard/ui.xml && adb -s "$S" pull /sdcard/ui.xml`.
   This only works for real Views, not for buttons drawn on a Canvas/GL surface. For those, read the layout code or the screenshot.
+- **Debugging "cannot click button" on Canvas / OpenGL overlays:**
+  - **Inset view bounds vs. panel size**: check `adb -s "$S" shell dumpsys activity top | grep -E "SurfaceView|Overlay"` — status/navigation bars shrink the view (e.g. `0,0-1920,1092` on a `1920x1200` panel), shifting world-to-screen Y math when full panel height is assumed.
+  - **Drag-ring / gesture handle stealing `ACTION_DOWN`**: if action buttons (`DEL`, `Spin`, etc.) sit at radius `R` on a configuration ring, check discrete button hitboxes *before* radial drag bands (`abs(dist - R) <= band`) or center-move handlers; entering a drag mode on `ACTION_DOWN` suppresses `onTap`.
+  - **World-space vs. screen-pixel hitboxes under zoom**: never compare `worldPt.distanceTo(btnWorld) <= hitboxPx` raw — convert via `hitboxPx / camera.zoom` (or hit-test in screen pixels) so zoomed-out targets stay >= 48-64 dp.
+  - **Edge clipping, type-order priority & silent guards**: flip or clamp floating context buttons near viewport borders so `center + offset` stays on-screen, choose `minByOrNull { distance }` across *all* entity types instead of type-ordered `when` branches, and never render an active button whose handler silently returns `false` on pre-placed entities and falls through to empty-space tap handling.
 
 ## 6. Logs & crash triage
 
