@@ -1,6 +1,6 @@
 ---
 name: voice-satellite-corpus
-description: Use when inspecting Home Assistant via ha-mcp, auditing Assist voice pipelines for cloud-vs-local privacy, or capturing single- or multi-device audio test corpora from ESPHome, TECHO5, or Android/Fire tablet voice satellites. Covers Streamable HTTP ha-mcp sessions, debug_recording_dir vs continuous 16 kHz ESPHome streaming trade-offs, and multi-mic room recording pitfalls.
+description: Use when inspecting Home Assistant via ha-mcp, auditing Assist voice pipelines for cloud-vs-local privacy, capturing single- or multi-device audio test corpora from ESPHome, TECHO5, or Fire tablet voice satellites, or auto-labeling voice corpora with teacher-student STT and VAD gates.
 ---
 
 # Voice Satellite Audio Corpus Capture & `ha-mcp` Auditing
@@ -55,3 +55,14 @@ When capturing the same spoken prompt across multiple tablets/satellites at near
      debug_recording_dir: /share/assist_pipeline
    ```
    Use two-line YAML indentation, validate with `homeassistant.check_config` before restarting, read the live WebSocket `assist_pipeline/run/debug` stream if transcripts are needed (the UI Debug view only holds a small in-memory ring buffer lost on restart), and purge `/share/assist_pipeline` before full Home Assistant OS backups.
+
+## 5. Randomized Boundary Trimming & Multi-Gate Auto-Labeling
+
+When curating evaluation or fine-tuning corpora from studio masters or imported satellite/tablet recordings, avoid both fixed-offset shortcut learning and manual labeling of easy clips:
+
+1. **Preserve lossless `raw/` + randomize `trimmed/` guard silence:** Keep the untrimmed capture in `raw/` (`chmod 0600`) and slice `trimmed/` takes to `[wakeword_onset - U(pre_min, pre_max), speech_end + U(post_min, post_max)]` (e.g. `U(1, 5) s` pre-wake, `U(2, 5) s` post-speech, extending with measured comfort room-tone when natural silence is shorter). Varying pre- and post-roll prevents wake-word and endpointing models from overfitting time-since-clip-start.
+2. **Three orthogonal review gates (human labels borderline clips only):**
+   - **Teacher confidence gate:** Transcribe with a strong calibrated cloud STT teacher (e.g. GCP Speech v2 Chirp 2/3 or Deepgram Nova-2/3 with word-level confidence) and flag `needs_review` if `utterance_confidence < tau_utt` (e.g. `0.85`) or `min_word_confidence < tau_word` (e.g. `0.78`).
+   - **Teacher–student disagreement gate:** Transcribe the same clip locally with the target student ASR (e.g. MLX Whisper) and flag `needs_review` whenever normalized token `WER > 0` (or when cross-checking two cloud teachers that disagree).
+   - **Signal & VAD sanity gate:** Flag `needs_review` if Silero/spectral VAD reports no speech on a non-silence prompt, borderline speech probability (`max_speech_prob < 0.45`), digital clipping (`|peak| >= 0.98`), or an empty transcript.
+3. **Sticky `human_verified` state & SHA-256 source deduplication:** Deduplicate imported NAS/tablet files by `source_sha256` before trimming, and make `review_status = "human_verified"` sticky so batch re-runs of the auto-labeler skip human-approved transcripts unless explicitly forced.

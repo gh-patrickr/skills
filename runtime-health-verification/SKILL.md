@@ -58,6 +58,10 @@ Use the project's existing probe first. If the project runs a service but has no
   identity check and one surface route.
 - Keep the exit-code contract: `0` healthy, `1` reachable but unhealthy, `2` not running /
   unreachable. The agent's decision table depends on it.
+- Keep `/healthz` and probed capability/status endpoints fast and bounded: never spawn uncached
+  CLI, auth-token, or heavy Python/ML module-import subprocesses (e.g. `gcloud auth`,
+  `python -c "import ..."`) on every request, which blow past probe timeouts on cold start.
+  Cache binary/module discovery in-process and cap any unavoidable subprocess timeout at `<= 2.5s`.
 - Add it to the project's docs and commit it with the change that introduced it.
 
 ## 4. Probe, then decide
