@@ -42,6 +42,10 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
 8. **Static-mode sanctity, predictive intercept parity & goal immunity**:
    - Clamp target and wormhole velocities/accelerations to zero whenever `motionStrategy == STATIC` so introductory static missions never drift off their $t = 0$ markers after `START`.
    - Whenever targets or portals move in dynamic modes, render their synchronized orbital path and closest-approach intercept marker during `PLANNING`, and anchor targets to primary celestial bodies (or exclude player-placed micro-masses from target acceleration) so steering planets never yank `ZIEL` away from the shot.
+9. **Unperturbed N-body equilibrium & Star-System / Galaxy topologies (`feat/nbody-star-systems-and-galaxies`)**:
+   - **Pre-solver stability gate (`verifySystemStabilityUnderNBody`):** Simulate `playerObjects = emptyList()` across full `maxTicks` under `MotionStrategyType.FULL_NBODY` before solving; reject any candidate with body-body collisions (`dist < r_i + r_j + 3.0`) or radial drift (`|d/d0 - 1| > 0.38` for star systems, `> 0.45` for outer galaxy planets).
+   - **Barycentric recoil & $C_N$ galaxy cores:** Compensate net system momentum ($\sum m_i \vec{v}_i = \vec{0}$) on unpinned central stars/black holes, place binary/ternary galaxy stars in exact $C_N$ rotational symmetry around the central black hole with effective enclosed mass $M_{\text{eff}} = M_{\text{BH}} + M_{\text{star}} \sum_{k=1}^{N-1} \frac{1}{4\sin(\pi k/N)}$, and place moons on retrograde orbits inside $0.25\,r_{\text{Hill}}$.
+   - **Stationary player anchors & `ORBIT_INSERTION` spin:** Keep stationary player-placed tools (`isPlayerPlaced && isAnchor && velocity == Vec2.ZERO`) pinned in `FullNBodyMotionStrategy.stepBodies` while ambient bodies move freely under mutual gravity; zero `spin = 0.0` on central anchors in `ORBIT_INSERTION` levels so Lense-Thirring frame-dragging does not perturb circular orbit radii, and evaluate solver distances against live `resolveTargetPosition(t)` with `solutionClusterCount >= 2`.
 
 ## Verification gate recipe
 

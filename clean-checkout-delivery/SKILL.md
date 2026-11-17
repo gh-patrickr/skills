@@ -189,6 +189,7 @@ new ones:
     (`systematic-change-impact`);
   - GitHub Actions (`.github/workflows/`) → inspect recent runs, push, and wait until the
     triggered workflow run completes with `conclusion === "success"` (`github-actions-ci`).
+- **JVM / Gradle in proxy-sandboxed Linux VMs:** if `./gradlew` fails with `InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty` (missing `/etc/ssl/certs/java/cacerts`), import `/etc/ssl/certs/ca-certificates.crt` into `/tmp/cacerts` via `keytool -importcert -noprompt -keystore /tmp/cacerts -storepass changeit` and pass `-Djavax.net.ssl.trustStore=/tmp/cacerts -Djavax.net.ssl.trustStorePassword=changeit` plus `-Dhttp.proxyHost` / `-Dhttps.proxyHost` from `$HTTPS_PROXY` in `JAVA_TOOL_OPTIONS`.
 
 Python + OKF project example:
 

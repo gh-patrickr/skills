@@ -158,3 +158,22 @@ linter.
 Copy `src/game`, `src/render`, `src/persist`, `src/ui`, `src/input.ts`, `src/loop.ts`,
 `src/bridge.ts`, `src/main.ts`, `tools/`, `tests/`, `.wg.json`, and the CI file.
 Replace `Aurora Drift` naming and the config; keep the contracts.
+
+## Procedural Physics & Dynamic Level Calibration
+
+When a game features coupled physics (e.g. mutual N-body gravity, orbital mechanics, or multi-body constraints) and procedurally generated levels:
+
+1. **Unperturbed Equilibrium Gate (Pre-Solver Rejection):**
+   - Before invoking the level solver, simulate the background environment alone (`playerObjects = []`) for the full level horizon `maxTicks`.
+   - Reject any candidate where non-player bodies collide (`dist < r_i + r_j + margin`) or drift outside bounded radial bands (`|r(t)/r(0) - 1| > tolerance`).
+   - For hierarchical or N-body systems:
+     - **Barycentric recoil compensation:** Give the central primary a counter-velocity $\vec{v}_0 = -\frac{1}{M_0}\sum_{i>0} m_i \vec{v}_i$ when unpinned so the system center of mass does not drift across the arena.
+     - **Symmetrical inner cores ($C_N$ symmetry):** Place binary/ternary primaries at equal radii and $2\pi k / N$ phase angles with circular speed around the effective enclosed mass $M_{\text{eff}} = M_{\text{center}} + M_{\text{partner}} \sum_{k=1}^{N-1} \frac{1}{4 \sin(\pi k / N)}$.
+     - **Retrograde Hill-stable sub-satellites:** Keep moon/sub-satellite semi-major axes well inside the Hill sphere ($a_{\text{moon}} \le 0.25\, r_{\text{Hill}}$) on retrograde orbits for long-term stability.
+     - **Separate stationary player tools from ambient bodies:** Keep stationary player-placed attractors/repulsors (`isPlayerPlaced && isAnchor && v == 0`) pinned at their placed coordinates while still applying their forces to all ambient bodies and projectiles.
+2. **Live-Target Solver Objective (`resolveTargetPosition(t)`):**
+   - Never score candidate solutions against the target's static $t = 0$ position when targets or obstacles move. Evaluate closest-approach distance against the live target position $\vec{p}_{\text{target}}(t)$ at each simulation tick $t$.
+   - When non-conservative forces (e.g. Lense-Thirring frame-dragging spin) are present, zero them on strict circular orbit-insertion anchors so analytical orbital radius checks match numerical integration.
+3. **Multi-Solution Cluster Gate (`N_clusters >= 2`):**
+   - Require every generated level to have at least 2 spatially distinct winning placement clusters (`N_clusters >= 2`) verified under the exact runtime integration strategy, and persist the best solver placement as the deterministic ghost-hint (`Hint 3`) template.
+

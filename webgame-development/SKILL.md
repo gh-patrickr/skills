@@ -185,7 +185,7 @@ of a screenshot.
 
 | File | Read it for |
 | --- | --- |
-| `references/architecture.md` | fixed timestep, state machine, config, bridge, save versioning, input |
+| `references/architecture.md` | fixed timestep, state machine, config, bridge, save versioning, input, procedural physics/N-body level calibration |
 | `references/testing.md` | test pyramid, seeds, bridge rules, visual baselines, a11y, flake policy |
 | `references/performance.md` | budgets, canvas/WebGL drawing, GC pressure, profiling, mobile |
 | `references/assets-audio.md` | formats, atlases, compression, WebAudio unlock, manifests |

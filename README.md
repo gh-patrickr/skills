@@ -84,6 +84,7 @@ skills/
 │   └── validate_skills.py         # frontmatter/link gate (also runs in CI)
 ├── .github/workflows/validate.yml
 ├── clean-checkout-delivery/       # always-on: project discovery, git bootstrap, delivery
+├── prompt-to-specification-ledger/ # always-on: distill prompts & append to specification.md
 ├── okf-architecture-maintenance/  # always-on where an OKF bundle exists
 │   └── references/example-project.md
 ├── runtime-health-verification/   # always-on where a service runs
