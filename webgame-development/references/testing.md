@@ -120,6 +120,48 @@ slower than 5 ms, instant death on every seed, or a replay hash mismatch.
 - Run it against a branch before/after a tuning change; the score deltas in
   `playtest.json` are the diff.
 
+### Capability-curve calibration & modular encounter design
+
+Smoke bots alone let campaigns ship where players effortlessly snowball to max power
+(`90%+` HP remaining, zero tension) or hit mathematically unkillable HP walls. When a
+game has multi-stage progression, calibrate every stage against a **3-bot capability
+bracket** in fast headless `stepTicks()`:
+
+1. **`RandomBot` → `DEFEAT`:** proves lane choices, switches, or target priority matter.
+2. **`HumanBaselineBot` → tight `1★` survival band (e.g. `8%–22%` remaining HP):**
+   models realistic reaction cadence and imperfect routing (e.g. bailing out to an
+   unblocked modest bonus when an obstacle is not broken in time). **Never** fake
+   difficulty by turning off continuous auto-fire (`fireHeld: true`) if a real player
+   simply holds fire.
+3. **`OptimalBot` → `2★–3★` mastery (`≥ 45%` remaining HP):** budgets gunfire across
+   unlocking/charging gates, breaching blockers, and thinning incoming waves.
+
+Pair calibration with **modular, obstacle-gated level design**:
+
+- Compose stages from **reusable encounter modules** (8–10 zones remixing deliberate
+  templates) rather than one-off per-stage entity arrays.
+- **Gate high-value bonuses behind obstacles or shot-budget trade-offs:** shield top
+  multipliers/weapons behind destructible `ARMORED_BLOCKER` crates that physically
+  intercept bullets (and deal collision damage if unbroken), or pair shoot-to-unlock
+  *Rush Gates* on one lane against advancing hordes on the opposite lane so every shot
+  is a tactical allocation between power growth and wave survival.
+
+### Frozen-clock interactive playtesting ("seeing" & feeling the game)
+
+Headless `step(4000)` runs in milliseconds and completely misses whether stages feel too
+short, whether HUD bars cover bottom spawners, whether event toasts stack over Boss
+Warning cards, or whether 3D labels collide down-road. Before signing off on gameplay
+pacing or visual polish, play interactively via a **frozen-clock Playwright harness**:
+
+- Inject an `addInitScript` virtual clock overriding `performance.now()` that advances
+  only while `window.__SIM_FROZEN__ === false`.
+- Alternate 1–3 s bursts of **real-time 60 Hz input** (`mouse.move`/`down` drags,
+  `keyboard.down`, key toggles) with `window.__SIM_FROZEN__ = true` pauses at mobile
+  Retina viewport (`540×960`, `deviceScaleFactor: 2`).
+- Visually inspect the captured PNGs multimodally alongside `snapshot()` +
+  `telemetry()` (`drawCalls`), log concrete optical defects, and shut down the harness
+  cleanly (`POST /quit`) so no browser or server lingers after the turn.
+
 ## Performance
 
 `wg perf` measures the live loop in Chrome, not the test bridge. See

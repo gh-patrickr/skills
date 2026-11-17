@@ -75,6 +75,32 @@ Do not let two loops run (`Phaser`'s and `src/loop.ts`). Choose one owner.
   `src/game` RNG and feed transforms from the snapshot.
 - Testing: WebGL screenshots are GPU/driver-dependent; use a higher pixel tolerance
   or assert geometry/state and keep one coarse visual baseline.
+- **`vertexColors × instanceColor` channel-zeroing trap:** Three.js multiplies
+  `vertexColor * instanceColor` in the shader. Baking saturated cyan (`[0, 0.9, 1]`)
+  or violet into a `.glb` that also receives per-instance warm tints (`setColorAt`)
+  zeroes out RGB channels into muddy brown/black. Choose one per mesh:
+  1. **Dynamically tinted props/drums:** author tintable `.glb` faces in neutral
+     high-value alabaster (`[0.92, 0.95, 0.99]`) with dark gunmetal trim so
+     `instanceColor` reads at full chroma.
+  2. **Bespoke multi-tone units/bosses:** bake full multi-tone vertex palettes into
+     each `.glb` and pass `0xffffff` `instanceColor` (`mat.color.setHex(0xffffff);
+     mat.vertexColors = true`) except during temporary status tints (e.g. cryo flash).
+- **Coplanar transparent shockwave / decal z-fighting:** instanced ground rings at the
+  exact same `y` flicker when multiple events fire together. Set `depthWrite: false`,
+  cap concurrent active rings, and stagger height (`baseY + slotIndex * 0.004`).
+- **3D → 2D projected DOM world labels & HUD layering:** raw `vector.project(camera)`
+  pills stack unreadably down-road under perspective foreshortening. Pool DOM nodes by
+  entity key (never rebuild `innerHTML` every frame), order `z-index` by camera depth,
+  run 2 passes of 2D screen-space AABB repulsion lifting farther pills above nearer
+  ones, and verify toast stacks against boss warning cards and bottom HUD bars at
+  `540×960 @ 2x DPR`.
+- **Silhouette-first weapon & projectile readability:** give each weapon class its own
+  instanced 3D projectile silhouette (darts, finned chevrons, tumbling flak octahedrons,
+  ringed plasma cores) paired with inline `<svg aria-hidden="true" focusable="false">`
+  HUD/world weapon symbols (`currentColor`, `≥ 3:1` contrast) instead of colour dots.
+- **Standalone single-file 3D HTML:** base64-embedding compact procedural binary glTF
+  2.0 `.glb` buffers and parsing via `GLTFLoader.parse(arrayBuffer)` ships zero-server
+  `file://`-playable 3D builds under `1.5 MB` and `< 25` draw calls.
 
 ## When not to add an engine
 
