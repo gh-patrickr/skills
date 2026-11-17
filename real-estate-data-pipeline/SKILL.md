@@ -1,11 +1,11 @@
 ---
 name: real-estate-data-pipeline
-description: Best practices for real estate data lineage, schema evolution, cross-portal deduplication, multi-anchor commute geo-filtering, and testing multi-stage data pipelines. Use when designing or changing storage, lineage, dedupe, or geo-targeting for a Polish property pipeline in any workspace.
+description: Best practices for real estate data lineage, schema evolution, cross-portal deduplication, multi-anchor commute geo-filtering, geo-OSINT, and testing multi-stage property pipelines. Use when designing or changing storage, lineage, dedupe, or geo-targeting for a real estate pipeline (including Polish portals, OSM, and cadastral WFS) in any workspace.
 ---
 
 # Real Estate Data Pipeline & Schema Evolution
 
-**Applies to:** any multi-stage Polish real-estate pipeline. Keep concrete anchor addresses,
+**Applies to:** any multi-stage real-estate data pipeline. Keep concrete anchor addresses,
 coordinates, and commute budgets in project-local configuration; keep this skill generic.
 
 This skill covers the storage design, schema evolution, versioning/lineage model, and geo-spatial analytics for Polish property scraping.
@@ -57,3 +57,9 @@ Brokers deliberately omit exact street addresses. The pipeline reconstructs coor
 3. **Polish Cadastral & Aerial Ground-Truthing**:
    - Query GUGiK or municipal WFS services (e.g. `wfs.um.warszawa.pl` or regional geoportal WFS) for parcel shapes (*działki ewidencyjne*) and building footprints (*obrysy budynków*).
    - Match plot size ($m^2$) and building footprint against candidate parcels within the triangulated zone.
+
+## 5. Testing Multi-Stage Pipelines
+- **Offline Stage-2 Replay**: Run parsers and extractors strictly against saved raw-lake fixtures (zero network calls) and assert idempotent re-ingestion when `content_hash` is unchanged.
+- **Lineage & Schema Backfills**: Test that bumping `EXTRACTOR_VERSION` / `PIPELINE_VERSION` reprocesses historical raw payloads without overwriting human-curated overrides.
+- **Dedupe Regression Pairs**: Maintain unit/snapshot fixtures for known duplicate pairs (exact copies, cross-portal matches, differing room-count sentinels) *and* negative pairs (adjacent apartments in the same building that must stay separate).
+- **Commute Ruleset Determinism**: Assert `rules_key` changes whenever `CommuteRules` thresholds or anchors change so cached routes invalidate and recompute across the whole catalog.

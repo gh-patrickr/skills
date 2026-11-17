@@ -1,6 +1,6 @@
 ---
 name: adb-wifi-debugging
-description: Connect to and debug/playtest Android or Amazon Fire tablets over Wi-Fi ADB (wireless debugging) from macOS or a VM - finding IP/port, pinning a fixed port, installing APKs, launching apps, screenshots, input injection (tap/swipe/pinch), logcat crash triage, frame-time (gfxinfo) and memory checks. Use whenever the user mentions ADB, wireless debugging, a tablet/phone test device, on-device playtests, or a Fire HD tablet.
+description: Connect to and debug/playtest Android or Amazon Fire tablets over Wi-Fi ADB (wireless debugging) from macOS, Linux, or a VM — finding IP/port, pinning a fixed port, installing APKs, launching apps, screenshots, input injection (tap/swipe/pinch), logcat crash triage, frame-time (gfxinfo), and memory checks. Use whenever the user mentions ADB, wireless debugging, a tablet/phone test device, on-device playtests, or a Fire HD tablet.
 ---
 
 # ADB over Wi-Fi: Debugging & Playtesting Android / Fire Tablets
@@ -23,7 +23,7 @@ adb -s <DEVICE_IP>:<RANDOM_PORT> tcpip 5555   # adbd restarts and also listens o
 sleep 4; adb disconnect <DEVICE_IP>:<RANDOM_PORT>; adb connect <DEVICE_IP>:5555
 adb devices -l                                 # must show "device", not "offline"/"unauthorized"
 ```
-Save the IP and port only in a **gitignored** local file (e.g. `device.properties`), never in committed repository files, and use a helper script (e.g. `scripts/adb_connect.sh`) that reads it. With multiple entries, always pass `-s <DEVICE_IP>:<PORT>`.
+Save the IP and port only in a **gitignored** local file (e.g. `device.properties` with `DEVICE_IP=<DEVICE_IP>` and `ADB_PORT=5555`), never in committed repository files, and use a helper script (e.g. `scripts/adb_connect.sh`) that reads it. With multiple entries, always pass `-s <DEVICE_IP>:<PORT>`.
 
 ## 3. Everyday commands (always `-s $SERIAL`)
 

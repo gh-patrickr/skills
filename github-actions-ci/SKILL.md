@@ -6,7 +6,7 @@ description: MANDATORY on EVERY interaction in any repository with GitHub Action
 # Mandatory GitHub Actions CI Check & Fix Skill
 
 **MANDATORY RULE FOR EVERY INTERACTION:**
-Whenever working in a repository with `.github/workflows/` (or a GitHub remote), you **MUST** check the status of recent GitHub Actions runs on **every interaction**, fix any failing workflows before concluding, and verify that the triggered run on GitHub Actions finishes with `success` (runs typically complete in `< 30 seconds`).
+Whenever working in a repository with `.github/workflows/` (or a GitHub remote), you **MUST** check the status of recent GitHub Actions runs on **every interaction**, fix any failing workflows before concluding, and verify that the triggered run on GitHub Actions finishes with `success`.
 
 ## 1. Check Recent GitHub Actions Runs (Every Interaction)
 
@@ -17,7 +17,7 @@ If `gh` is installed, you can run:
 gh run list -R OWNER/REPO --limit 15
 ```
 
-On macOS VMs where `gh` is not installed, authenticate using the macOS keychain Git credential helper (`git credential fill`) and query the GitHub Actions REST API directly:
+When `gh` is not installed, authenticate using `$GITHUB_TOKEN` or your configured Git credential helper (`git credential fill`) and query the GitHub Actions REST API directly:
 
 ```bash
 REPO_SLUG=$(git remote get-url origin | sed -E 's#.*github\.com(:|/)([^/]+/[^/.]+)(\.git)?$#\2#')
@@ -67,10 +67,10 @@ curl -sSL -H "Authorization: Bearer $TOKEN" \
    - GitHub Actions `ubuntu-latest` runners have 2 shared x64 vCPUs; performance/throughput benchmarks must have sufficient headroom (at least 2x–3x margin on local Apple Silicon) and avoid parallel subprocess CPU starvation during timed benchmarks.
    - Verify no untracked or uncommitted local fixes were left out of the repository.
 
-## 4. Push & Wait (< 30 Seconds) to Confirm Green CI Run
+## 4. Push & Wait to Confirm Green CI Run
 
-After committing and pushing any changes (or fixing a broken workflow), **never assume CI will pass without checking**. Because runs take less than 30 seconds:
+After committing and pushing any changes (or fixing a broken workflow), **never assume CI will pass without checking**:
 
 1. Push the commit/branch to `origin`.
 2. Poll/watch the newly triggered GitHub Actions run until `status === "completed"`.
-3. Verify `conclusion === "success"`. If it fails, repeat Steps 2–4 immediately until the latest run on `main` is green.
+3. Verify `conclusion === "success"`. If it fails, repeat Steps 2–4 immediately until the latest run is green.

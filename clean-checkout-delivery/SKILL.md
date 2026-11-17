@@ -1,6 +1,6 @@
 ---
 name: clean-checkout-delivery
-description: ALWAYS use at the start and end of every coding task in any workspace — discover which directories are real projects, make sure each one is tracked by git (create the repository at the project root when missing, without nesting repos at a multi-project workspace root), commit pre-existing work as a labelled baseline before editing, work on a scoped feature branch (feat/*, fix/*, docs/*, chore/*), keep your changes separate from another session's, and finish with green local + GitHub Actions CI checks, well-scoped commits, and pushing to the remote. Use even when the workspace has no git yet.
+description: ALWAYS use at the start and end of every coding task in any workspace — discover which directories are real projects, make sure each one is tracked by git (create the repository at the project root when missing, without nesting repos at a multi-project workspace root), commit pre-existing work as a labelled baseline before editing, work on a scoped feature branch (feat/*, fix/*, docs/*, chore/*), keep your changes separate from another session's, fix any privacy/secret findings before committing, and finish with green local + GitHub Actions CI checks, well-scoped commits, and pushing to the remote. Use even when the workspace has no git yet.
 ---
 
 # Clean checkout and delivery (always-on)

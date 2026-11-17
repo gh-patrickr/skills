@@ -80,9 +80,9 @@ Use the project's existing probe first. If the project runs a service but has no
   `uv run <app> serve`, `docker compose up`, `cargo run -- serve`). Prefer a clean
   stop-then-start so a stale process cannot keep the port.
 - **Never** `nohup`, `&`, `disown`, a detached terminal, or a second server on the same
-  port. Launch the foreground command as the harness's managed background job (in DSH:
-  the `bash` tool with `run_in_background: true`) and keep the job handle so you can read
-  the startup log and stop it.
+  port. Launch the foreground command as your harness's managed background job (for example,
+  in DSH use the `bash` tool with `run_in_background: true`) and keep the job handle so you
+  can read the startup log and stop it.
 - Respect the project's network default: stay loopback-only unless the previous instance
   deliberately served the LAN.
 - Starting a second instance is not a restart. Stop the old one first.

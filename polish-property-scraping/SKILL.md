@@ -46,7 +46,7 @@ This skill guides the creation, testing, and maintenance of scrapers for Polish 
   - Zero network hits to portals during extraction iteration, debugging, or schema evolution.
   - Extracts standard attributes (price, surface, plot size, garden, rooms, address, coordinates).
 
-## 4. Testing & Maintenance Runbook
-- **Golden Fixtures**: Always record real anonymized HTML/JSON responses in `tests/fixtures/{portal}/`.
-- Unit tests run 100% offline against golden fixtures.
-- Selector failure alerts: If a portal updates DOM, tests fail immediately on the updated fixture before touching production runs.
+## 4. Testing, Privacy Hygiene & Maintenance Runbook
+- **Golden Fixtures**: Always record real HTML/JSON responses in `tests/fixtures/{portal}/`, and **scrub personal/broker PII** (phone numbers, email addresses, personal cookies/tokens) before committing fixtures.
+- **Offline Verification**: Unit tests must run 100% offline against golden fixtures without hitting live portals.
+- **Selector Failure Alerts**: If a portal updates its DOM or JSON payload shape, fail immediately on the updated fixture before running production crawls.

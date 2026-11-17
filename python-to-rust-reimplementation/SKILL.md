@@ -176,7 +176,7 @@ A green unit suite alone is not evidence that the service works.
 
 1. **Truthiness/None**: Python `[]`/`""`/`0` are false; Rust `Option`/empty collections differ.
 2. **Regex**: Rust `regex` has no lookaround/backreferences. Rewrite lookbehind as prefix groups or
-   post-filter. Test Polish diacritics and Unicode classes.
+   post-filter. Test non-ASCII diacritics (e.g. Polish/German) and Unicode character classes.
 3. **Dates**: Python naive local/UTC timestamps vs Rust `SystemTime`; keep the DB text format exact.
 4. **JSON**: key order, `ensure_ascii`, float formatting, `null` vs absent; use canonical JSON.
 5. **Encoding**: percent-encoding/`ascii_url`, HTML entities, form vs JSON bodies.
