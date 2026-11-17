@@ -1,6 +1,6 @@
 ---
 name: home-assistant-voice
-description: Use when building, aligning, or debugging Home Assistant Assist voice pipelines, custom stt or conversation integrations, Alexa-to-HA smart-home migrations, local voice routers/reflex compilers, or household voice-command datasets.
+description: Use when building, aligning, or debugging Home Assistant Assist voice pipelines, custom stt/conversation integrations or Core overrides, Whisper/Piper add-ons, outbound MLX/GPU workers, least-privilege HA sidecars, Alexa-to-HA migrations, or household voice datasets.
 ---
 
 # Home Assistant & Local Voice Pipeline Engineering
@@ -34,6 +34,7 @@ Physical satellites (ESPHome Voice PE, tablet panels, liberated smart speakers) 
   - Use `probatio` for `CONFIG_SCHEMA` and `ConfigFlow` schemas.
   - On `ConversationEntity`, set `_attr_supported_features = conversation.ConversationEntityFeature.CONTROL`, call `conversation.async_set_agent(hass, entry, self)` in `async_added_to_hass`, and resolve room context via `device_registry` → `area_registry` from `user_input.device_id`.
   - Keep token auth and wire-payload builders in a pure-Python `security.py` module **free of `homeassistant.*` imports** so standalone `pytest` CI validates security and framing in `<1 s` without installing Home Assistant Core.
+  - When overriding built-in Core integrations (`manifest.json` `"version"`), auto-importing YAML STT/TTS entities (`SOURCE_IMPORT`), configuring `core_whisper` custom CTranslate2 models (`/addon_configs/core_whisper` → `/config`), pinning Apple Silicon MLX worker threads, or replacing root SSH/SFTP sidecars with scoped non-admin HTTP views, load **[references/stt-addons-and-sidecars.md](references/stt-addons-and-sidecars.md)**.
 
 ## 4. Safety Firewall, Compact Local LLMs & Voice Datasets
 
