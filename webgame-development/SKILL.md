@@ -138,6 +138,13 @@ a `wg-allow-platform` comment.
 Adapters own the edges: `src/loop.ts` (clock/rAF), `src/input.ts`, `src/render/`,
 `src/persist/`, `src/ui/`, `src/main.ts`.
 
+### 4.1 Simulation, hitbox & replay pitfalls learned in production
+
+- **1:1 visual-to-hitbox parity for crowds/formations:** When rendering a squad or multi-entity formation inside `±halfWidth` where each visual member has body radius `R`, inset member center positions to `±(halfWidth - R)` so the outermost rendered bodies sit at exact `±halfWidth`. Debug wireframe overlays (`?debug=1`) must call the exact simulation width helper (e.g. `getSquadHalfWidthMilli()`), never a separate visual estimate.
+- **Simultaneous multi-gate collision & PEMDAS precedence:** When a wide player AABB overlaps multiple gates/modifiers on the same tick, trigger **all** overlapped gates independently (both positive and negative, without neutralizing sibling gates in the row) and sort simultaneous modifiers by standard math order of operations (**PEMDAS**: `MUL` → `DIV` → `ADD` → `SUB`, so `85 × 2 + 25 = 195`). Ensure bot AI filters positive vs. negative gates and steers away from leftover active negative gates on subsequent ticks.
+- **One-click 30-second deterministic bug report (`ReplayRingBuffer`):** Store a periodic `anchorSnapshot` every `300` ticks (5 s) plus RLE-compressed `InputFrame`s covering the last `1,800` ticks (30 s at 60 Hz). Expose a one-click `🐞` button on HUD/Pause/Results and `window.__WG__.exportBugReport()` / `importBugReport(raw)` so any player bug report deterministically replays the exact last 30 seconds.
+- **macOS Playwright browser & `ffmpeg` video capture:** Include `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome` in `systemBrowserPath`. Before recording Playwright `.mp4`/`.webm` gameplay videos on macOS, symlink `$(command -v ffmpeg)` to `~/Library/Caches/ms-playwright/ffmpeg-1013/ffmpeg-mac` (or `~/.cache/ms-playwright/ffmpeg-1013/ffmpeg-linux` on Linux) if Playwright's bundled `ffmpeg` is missing.
+
 ## 5. Automations this skill installs
 
 | Command | What it automates |

@@ -232,6 +232,17 @@ git status -sb               # verify branch is synced with origin/<branch> (no 
   the branch clean locally and report the exact commit SHA and branch to push in the final
   report.
 
+### Mechanical enforcement via Lifecycle & Git hooks
+
+Skills are advisory instructions; pair them with deterministic OS-level hooks (`scripts/pre_tool_use_guard.sh` and `scripts/stop_delivery_gate.sh` in this skill folder) so the gates cannot be skipped:
+
+1. **Antigravity Lifecycle Hooks (`.agents/hooks.json` in workspace or `~/.gemini/config/hooks.json` global):**
+   - `PreToolUse` (matcher `"run_command"` → `pre_tool_use_guard.sh`): Denies (`{"decision": "deny"}`) blanket staging (`git add -A`, `git add --all`, `git add .`) and `--no-verify`.
+   - `Stop` (flat array → `stop_delivery_gate.sh`): Blocks turn completion (`{"decision": "continue", "reason": "..."}`) when `git status --porcelain` is dirty, current branch (`git symbolic-ref --short HEAD`) is not `main`/`master`, `@{u}..HEAD > 0`, or `scripts/runtime_health.sh` fails.
+   - **Critical hook invariants:** Always return `{"decision": "allow"}` when `fullyIdle === false` (so background tasks/subagents do not deadlock); pass `--global` in `~/.gemini/config/hooks.json` so workspaces with `.agents/hooks.json` do not run duplicate checks; and never allow loopback mock unit tests (`127.0.0.1`/`localhost`) to overwrite tracked deploy manifests (route mock test outputs to `os.tmpdir()`).
+2. **Git Native Hooks (`.githooks/pre-commit` & `.githooks/pre-push` via `git config core.hooksPath .githooks`):**
+   - Run determinism/privacy/typecheck/unit gates in `pre-commit` and runtime-health + `--if-configured` deployers in `pre-push`.
+
 ## 5. Final report
 
 State:
