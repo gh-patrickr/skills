@@ -83,6 +83,10 @@ Cloud VMs typically lack `/dev/kvm`, making full Android system-image emulators 
 3. **OpenGL ES 3.0 Straight vs. Premultiplied Alpha (`GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA`)**:
    - Under standard straight-alpha blending (`glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)`), **never** pre-multiply RGB by alpha inside the fragment shader (`vec4(rgb * a, a)`). Hardware blending multiplies by `a` a second time (`rgb * a²`) while attenuating the background by `1 - a`, producing a dark rectangular bounding-box halo around glowing sprites over non-black backgrounds.
    - **Fix**: Output straight alpha (`outRgb = premulRgb / max(outAlpha, 1e-4)`) or use `glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA)`.
+4. **Reset auto-selected playback speed on level transition & bound outer-planet flight horizons**:
+   - If `autoSelectSpeed` steps up to `5x` or `10x` for long-period outer-system transfers, reset `speed = PlaybackSpeed.NORMAL` and `speedManuallyChosen = false` inside `loadLevel(...)` so subsequent short missions do not inherit high time-warp. Budget `maxFlightFrames >= 650` (`~21.6 s` at `30 fps`) so multi-year outer-planet transfers complete before recording stops.
+5. **Prevent HUD bleed-through behind semi-transparent modal/menu overlays**:
+   - When a full-screen menu overlay `View` (`alpha < 255`) is visible, explicitly set sibling HUD views to `View.INVISIBLE` and clear the overlay canvas (`PorterDuff.Mode.SRC`) before drawing so underlying HUD telemetry cards and gauges never bleed through.
 
 ---
 
@@ -106,3 +110,5 @@ When synthesizing real-time game audio (`AudioTrack` / PCM buffer) driven by phy
      - *Outward away from center ($> 0$, outer planet or repulsor)*: Open airy high-register shimmer partials (`4x..5x`), raise the arpeggio register, and widen stereo chorus detuning.
    - **Magnitude ($\|\vec{a}_{\text{grav}}\|$, gravity strength)**:
      - Use log-compressed strength ($\tanh(0.55 \ln(1 + 2.4 \|\vec{a}\| / a_{\text{ref}}))$) to drive master dynamic swell, filter cutoff brilliance, and pulse rate, and verify all three axes with pure-JVM signal tests (RMS, zero-crossing Hz, and derivative spectral brightness).
+5. **Widen telemetry smoothing under high time-warp (`10x–50x`)**:
+   - Scale the per-sample telemetry envelope time constant with the active playback speed ($\tau_{\text{warp}} = \tau_0 \cdot (1 + 0.55 \ln(\text{warp}))$, up to $\sim 80\text{ ms}$ at `50x`) so compressed orbital flybys produce smooth musical swells instead of abrupt pitch/filter whips.
