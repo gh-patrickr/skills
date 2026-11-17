@@ -72,6 +72,9 @@ Cloud VMs typically lack `/dev/kvm`, making full Android system-image emulators 
 - **Root cause**: `gdrive` downloads its binary to `~/.gemini/jetski/plugin_data/gdrive/bin/.gdrive.tmp.<pid>` and calls `chmod`, which FUSE rejects even though files on the mount already have `0755` permissions.
 - **Fix**: Rename `.gdrive.tmp.*` to the expected `gdrive-<version>` filename in the same directory.
 
+### Trap C: Unnecessary `@RunWith(RobolectricTestRunner::class)` on logic/controller tests
+- **Rule**: Keep UI controllers (`TouchUiController`, `StarMapController`, `InAppLevelEditorController`), camera math (`SmartFramingCamera`), and geometry builders (`TrajectoryGeometryBuilder`) free of `android.view.MotionEvent` and `android.graphics.Canvas`. Pass plain coordinates (`Float`, `Vec2`) into controller methods so 95 %+ of UI/editor/star-map regression tests run as pure JVM tests (`kotlin.test.Test`) in milliseconds without triggering Robolectric's `MavenArtifactFetcher` download at all. Reserve `@RunWith(RobolectricTestRunner::class)` strictly for tests that rasterize an Android `Bitmap`/`Canvas` or record video frames.
+
 ---
 
 ## 3. Visual & Physics Fidelity Rules for Recorded Playthroughs

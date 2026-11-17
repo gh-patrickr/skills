@@ -69,6 +69,17 @@ printf '%s\n' "$LOG" | tail -n 100
    - GitHub Actions `ubuntu-latest` runners have 2 shared x64 vCPUs (~2x–3x slower single-thread than Apple Silicon). Wall-clock throughput benchmarks must keep >= 2.5x–3x local headroom, warm up JIT before timing, take the best of 3 trials to ride out hypervisor/GC pauses, and disable cross-file parallelism (`fileParallelism: false` in `vitest.config.ts`) when sibling test files spawn subprocesses or run heavy crypto.
    - Verify no untracked or uncommitted local fixes were left out of the repository.
 
+### 3.1 Android SDK & Signed APK Release Pitfalls
+
+- **Never use deprecated `android-actions/setup-android@v3`**: It fails on current runners or blocks on unaccepted SDK licenses (such as the Google TV Add-on license). Use `actions/setup-java@v4` (Temurin 17) and invoke pre-installed `sdkmanager` directly:
+  ```yaml
+  - name: Accept Android SDK Licenses & Install Platform 34
+    run: |
+      yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
+      "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+  ```
+- **Always sign the `release` APK**: Android and Fire OS devices refuse to install `*-release-unsigned.apk`. Configure `release { signingConfig = signingConfigs.getByName("debug") }` as the fallback when no production keystore is injected, and publish installable APKs via both `actions/upload-artifact@v4` (every push) and `softprops/action-gh-release@v2` (on `v*` tags with `permissions: contents: write`).
+
 ## 4. Push & Wait to Confirm Green CI Run
 
 After committing and pushing any changes (or fixing a broken workflow), **never assume CI will pass without checking**:

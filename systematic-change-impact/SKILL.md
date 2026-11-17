@@ -128,6 +128,19 @@ When in doubt, treat it as systematic. Say so explicitly in the final answer
 - Raw input is immutable; replay from it with a bumped version instead of mutating history.
 - A grouping/identity change needs a **global** rebuild; a scoped rebuild splits records
   that should stay together.
+- **Sequence generator and verification tasks (`&&`):** When a CLI generator writes committed
+  artefacts on disk (e.g. `assets/levels/*.json`) that another module's tests read, never
+  pass both in a single parallel build invocation (`./gradlew :cli:generate :core:test`) —
+  the test task will run before the generator finishes and verify the **stale** corpus. Run
+  the generator to completion first, then run the test suite.
+- **Assert corpus-wide distribution & realism ("Solvable ≠ Playable"):** When regenerating $N$
+  items (levels, routes, fixtures), a per-item solver or schema check can pass even when all
+  $N$ items collapsed into near-duplicates, trivial straight-line geometry, or off-screen
+  coordinates. Add a corpus-level test asserting population diversity: launch/geometry
+  variance (computing offsets relative to the angled ray $y_0 + \Delta x \tan\theta_0$),
+  multi-object solutions, active-playfield hazards, non-zero dynamic displacement, true
+  orbital mechanics ($\Delta\theta$ swept + tangential dominance $v_t \ge 0.72\,v_r$ rather
+  than simple ring crossing), and per-tab viewport coordinate bounds (`(i - 1) % pageSize`).
 - "The next crawl/import will fix it" is **not** a migration: records that are no longer
   fetched will never be corrected, and the user sees the wrong state meanwhile.
 - Take a backup before a migration or destructive rebuild.
