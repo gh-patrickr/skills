@@ -40,6 +40,21 @@ Do not cache `index.html` long-term; that is how users get stuck on an old build
   `Cross-Origin-Embedder-Policy: require-corp` if you actually need
   `SharedArrayBuffer`; it breaks cross-origin assets unless they send CORP headers.
 
+### Least-privilege Firebase Hosting REST deploys
+
+When deploying a standalone/static bundle directly via the Firebase Hosting REST API
+(`firebasehosting.googleapis.com/v1beta1`, OAuth scope
+`https://www.googleapis.com/auth/firebase.hosting`) under a minimal custom IAM role
+granting only `firebasehosting.sites.get` and `firebasehosting.sites.update`:
+
+- `POST /v1beta1/sites/{site}/versions` **commits the new `CREATED` version on the
+  backend and then returns HTTP `403`** on its post-create metadata lookup.
+- Do **not** escalate IAM permissions to work around that `403`. Instead, on `403`,
+  query `GET /v1beta1/projects/{project}/sites/{site}/versions`, select the matching
+  `status === "CREATED"` version (`name.replace(/^projects\/[^/]+\//, '')`), and
+  proceed normally through `:populateFiles`, gzipped upload, `PATCH ?updateMask=status`
+  (`FINALIZED`), and `/releases`.
+
 ## PWA and offline (optional)
 
 Only add a service worker if offline play is a real requirement. Pitfalls:

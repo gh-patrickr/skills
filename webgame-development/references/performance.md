@@ -67,6 +67,19 @@ suspect system, then remove it.
 - Collision: brute force is fine below ~200 entities; above that use a uniform
   grid or spatial hash. Keep the grid out of `GameState` (rebuild per step) so
   snapshots stay simple.
+- **Pure-functional (`stepTick(prev) -> next`) V8 hot loops**: when snapshots are
+  deeply immutable for replays/time-travel and hashed per tick:
+  1. **Monomorphic object literals over `{ ...entity }` spreads** — `{ ...e, x }` in a
+     per-tick loop hits V8 `CloneObjectIC`, and omitting optional fields on spawn then
+     adding them later (`slowTicks`, `lastGateId`) transitions V8 Hidden Classes (Maps).
+     Write explicit literals with all keys in identical order (`optionalField: undefined`).
+  2. **Module-level `Int32Array` scratch buffers inside synchronous `stepTick`** —
+     unpack active target `x`, `y`/`z`, `radius`, `hp` into reusable typed arrays
+     (grown only if `count > capacity`), apply projectile/AoE hits in those flat arrays
+     without mutating `prev`, and materialize survivor objects once at the end of the tick.
+  3. **1D axis range pre-check** — compute `[minTargetZ, maxTargetZ]` (including radius,
+     updated on knockback) once per tick so projectiles outside the active target band
+     skip the inner loop in `O(1)`.
 - Cap catch-up steps (the loop does) so a slow device degrades to slow motion
   instead of a freeze.
 
@@ -111,4 +124,5 @@ suspect system, then remove it.
 | Sawtooth heap | per-frame allocations | pool, reuse, profile |
 | Bundle over budget | accidental dependency | `npx vite-bundle-visualizer`, remove, split |
 | Update > 2 ms | O(n²) collision or splice storm | grid, swap-remove |
+| Pure `stepTick` fast locally, slow on CI | `{ ...entity }` spreads, polymorphic hidden classes, or parallel Vitest subprocess starvation on 2-vCPU x64 | monomorphic literals + `Int32Array` scratch buffers + axis bounds pre-check; `fileParallelism: false` |
 | Perf fine locally, bad in CI | software rendering in headless CI | compare medians, keep floors realistic |

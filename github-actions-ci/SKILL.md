@@ -55,16 +55,18 @@ JOB_ID=$(curl -sS -H "Authorization: Bearer $TOKEN" \
   }
 ' | head -n 1)
 
-# 2. Fetch the failure log output from the failed job
-curl -sSL -H "Authorization: Bearer $TOKEN" \
-  "https://api.github.com/repos/${REPO_SLUG}/actions/jobs/${JOB_ID}/logs" | tail -n 100
+# 2. Extract exact error lines first (post-job cleanup can push errors past tail -n 100), plus tail context
+LOG=$(curl -sSL -H "Authorization: Bearer $TOKEN" \
+  "https://api.github.com/repos/${REPO_SLUG}/actions/jobs/${JOB_ID}/logs")
+printf '%s\n' "$LOG" | grep -E "##\[error\]|FAIL|AssertionError|Error:" || true
+printf '%s\n' "$LOG" | tail -n 100
 ```
 
 ## 3. Reproduce, Fix & Verify Locally
 
 1. Run every command executed by `.github/workflows/*.yml` locally (e.g., `npm run audit:determinism`, `npm run typecheck`, `npm test`, `npm run build:assets`, `npm run build`).
 2. Account for CI runner differences:
-   - GitHub Actions `ubuntu-latest` runners have 2 shared x64 vCPUs; performance/throughput benchmarks must have sufficient headroom (at least 2x–3x margin on local Apple Silicon) and avoid parallel subprocess CPU starvation during timed benchmarks.
+   - GitHub Actions `ubuntu-latest` runners have 2 shared x64 vCPUs (~2x–3x slower single-thread than Apple Silicon). Wall-clock throughput benchmarks must keep >= 2.5x–3x local headroom, warm up JIT before timing, take the best of 3 trials to ride out hypervisor/GC pauses, and disable cross-file parallelism (`fileParallelism: false` in `vitest.config.ts`) when sibling test files spawn subprocesses or run heavy crypto.
    - Verify no untracked or uncommitted local fixes were left out of the repository.
 
 ## 4. Push & Wait to Confirm Green CI Run
@@ -72,5 +74,5 @@ curl -sSL -H "Authorization: Bearer $TOKEN" \
 After committing and pushing any changes (or fixing a broken workflow), **never assume CI will pass without checking**:
 
 1. Push the commit/branch to `origin`.
-2. Poll/watch the newly triggered GitHub Actions run until `status === "completed"`.
-3. Verify `conclusion === "success"`. If it fails, repeat Steps 2–4 immediately until the latest run is green.
+2. Poll/watch the newly triggered GitHub Actions run until `status === "completed"` (use the agent's native timer/schedule tool rather than shell `sleep` loops when available).
+3. Verify `conclusion === "success"`. When merging a feature branch into `main`, verify **both** the feature-branch run and the post-merge `main` run — deploy/release steps gated on `github.ref == 'refs/heads/main'` are skipped on feature branches and PRs. If either fails, repeat Steps 2–4 immediately until `main` is green.

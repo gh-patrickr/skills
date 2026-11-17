@@ -125,6 +125,18 @@ slower than 5 ms, instant death on every seed, or a replay hash mismatch.
 `wg perf` measures the live loop in Chrome, not the test bridge. See
 `references/performance.md` for what the numbers mean and how to fix a failure.
 
+For headless pure-core throughput gates (e.g. `3,600 ticks < 250 ms` / `> 50,000 ticks/s`
+in Vitest on `ubuntu-latest` 2-vCPU x64 runners):
+
+- Set `fileParallelism: false` in `vitest.config.ts` (or isolate the benchmark in a
+  sequential Vitest project) whenever sibling test files spawn `bash`/`node` child
+  processes or run heavy crypto (`generateKeyPairSync`) — concurrent worker files
+  starve the benchmark vCPU by 2×–4×.
+- Pre-allocate input frames outside the timed loop, warm up V8 JIT (`≥ 500` ticks)
+  after heap-heavy bot-calibration suites, reset cleanly to `initial` if a stage ends
+  mid-benchmark (avoid leaving an unkillable boss accumulating max minions), and
+  measure the **best of 3 trials** while maintaining ≥ 2.5×–3× headroom on Apple Silicon.
+
 ## Flake policy
 
 A flaky test is a bug. Fix the synchronisation, not the retry count:
