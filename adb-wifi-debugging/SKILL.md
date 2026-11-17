@@ -63,6 +63,13 @@ adb -s "$S" shell "dumpsys power | grep -E 'mWakefulness|Display Power'; dumpsys
 - **Verify the `Activity:` line of `am start -W`:** `am start -W` still exits `0` with `Status: ok` when blocked behind a non-PIN swipe keyguard, resolving to `.Launcher` instead of `PKG/.MainActivity`. On Android 9 / Fire OS, `wm dismiss-keyguard` alone can be a no-op; run the wake + `82` + upward swipe sequence above and re-run `am start -W` until `Activity:` reports your target activity.
 - If a PIN/password lock screen is active, Android/Fire OS ignores `system screen_off_timeout` and turns the display off again in ~10 s, `wm dismiss-keyguard` / swipe only reveals the PIN pad, and `am start` launches *underneath* the lock screen. Ask the user once to unlock with their PIN and wait — do not try to bypass it or inject blind taps. When `Display Power: state=OFF`, `screencap -p` exits `0` with an **all-black PNG** (distinct from `FLAG_SECURE`, which returns `rc=1` or an empty file).
 
+### 3.1 "Install the latest version" freshness & wake-up checklist
+
+1. **Sync & rebuild from `HEAD`**: run `git fetch origin && git status -sb` (pull `--ff-only` if behind `origin`), and check `git log -1 --format=%ci` against any prebuilt `dist/` or `releases/` APK mtime. Rebuild (`./gradlew :app:assembleDebug`) whenever `HEAD` is newer than existing artifacts.
+2. **Reconnect after host/daemon restarts**: a server or VM restart resets the local ADB daemon (`adb devices` returns empty) even while the tablet still listens on `tcpip 5555`. Reconnect with a bounded timeout (`perl -e 'alarm 5; exec @ARGV' adb connect "<DEVICE_IP>:5555"`).
+3. **Wake before launching**: if `mWakefulness=Asleep`, run `input keyevent KEYCODE_WAKEUP` and `wm dismiss-keyguard` (when no PIN is set) before `am force-stop PKG && am start -W -n PKG/.MainActivity`; launching behind a sleeping/keyguarded screen yields black screenshots and throttled frame pacing.
+4. **Verify install & health**: check `dumpsys package PKG | grep -E "versionName|lastUpdateTime"` matches the current time, `logcat -d -b crash | grep PKG` is empty, and inspect a fresh `screencap`.
+
 ## 4. Screenshots: look at the app
 
 ```bash
@@ -80,7 +87,7 @@ adb -s "$S" shell input text "hello"
 ```
 - Coordinates are **screen pixels in the current orientation** (e.g. landscape 1920x1200).
 - `input` has no multi-touch. For pinch zoom, either add a debug zoom control or intent to the app, or use `sendevent` (device-specific, painful). Prefer app-side debug hooks:
-  `adb shell am broadcast -a PKG.DEBUG_ACTION --es cmd zoom_in` received by a debug-only BroadcastReceiver.
+  `adb shell am broadcast -a PKG.DEBUG_ACTION --es cmd zoom_in` received by a debug-only BroadcastReceiver. Also expose state-jump commands (e.g. `level`, `golden`, `speed`) so on-device checks can jump directly to late-campaign or sequentially locked screens without brittle tap sequences.
 - To find button positions, use `adb -s "$S" shell uiautomator dump /sdcard/ui.xml && adb -s "$S" pull /sdcard/ui.xml`.
   This only works for real Views, not for buttons drawn on a Canvas/GL surface. For those, read the layout code or the screenshot.
 - **Debugging "cannot click button" on Canvas / OpenGL overlays:**

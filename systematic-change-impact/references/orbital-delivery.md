@@ -14,7 +14,7 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
 
 - **Campaign JSON writer**: `:cli-generator:generateCampaignLevels` (`CampaignGeneratorMain.kt` → `LevelGenerator.generateCampaign()`).
   - Never hand-edit `goldenSolution`, `capsuleLaunch`, or `bonusBuoy` coordinates in `level-*.json`.
-  - When invoked via Gradle (`./gradlew :cli-generator:generateCampaignLevels`), the subproject working directory is `cli-generator/`; `CampaignGeneratorMain.kt` resolves `../android-app/src/main/assets/levels` and writes each verified level JSON immediately upon completion.
+  - When invoked via Gradle (`./gradlew :cli-generator:generateCampaignLevels`), the subproject working directory is `cli-generator/`; `CampaignGeneratorMain.kt` resolves `../android-app/src/main/assets/levels` and writes each verified level JSON immediately upon completion. Pass `--args="--output <abs-path> --levels=7,8"` for fast single-level inner-loop iteration before running the full `:cli-generator:test` gate.
 - **Gradle in sandboxed Linux VMs**: Always pass `ANDROID_HOME=$HOME/android-sdk` and `--no-daemon --offline` (or use `scripts/record_playthrough.sh` which builds the local proxy truststore automatically).
 
 ## Hard-earned domain rules (N-body solver & campaign generation)

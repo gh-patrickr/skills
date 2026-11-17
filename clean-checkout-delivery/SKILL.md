@@ -127,7 +127,10 @@ directory was left untracked.
    explicitly asks to commit straight to `main`. Push the feature branch to `origin`
    (`git push -u origin <branch>`), verify CI passes on the feature branch (see
    `github-actions-ci`), and once green, fast-forward/merge into `main` and push `main`
-   (unless the user requested leaving a PR open).
+   (unless the user requested leaving a PR open). When editing a shared clone where another
+   parallel session already has an active branch or uncommitted edits, use an isolated
+   worktree (`git worktree add /tmp/<slug> -b <branch> origin/main`) instead of switching
+   branches under the other session, and remove the worktree once merged.
 
 ## 2. Keep a change ledger
 
@@ -157,6 +160,11 @@ Rules:
 
 - One concern per commit; a checkpoint commit is explicitly labelled as such.
 - Commit only green states.
+- **Commit and push incrementally on multi-item lists or long turns**: when working through a
+  checklist (`fixes.md`, `improvements.md`) or running heavy builds/solvers where token limits
+  or server restarts can cut off a turn mid-flight, verify, commit, tick off the checklist item,
+  and `git push` to the feature branch **after each completed item** rather than batching all
+  commits or pushes until the end of the turn.
 - Put the test that protects a behaviour in the same commit as the behaviour.
 - If the change touches stored/derived data, record the before/after numbers and the job
   that applied them in the commit body (and in `log.md` where the project keeps one).

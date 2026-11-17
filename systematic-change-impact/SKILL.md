@@ -141,6 +141,12 @@ When in doubt, treat it as systematic. Say so explicitly in the final answer
   multi-object solutions, active-playfield hazards, non-zero dynamic displacement, true
   orbital mechanics ($\Delta\theta$ swept + tangential dominance $v_t \ge 0.72\,v_r$ rather
   than simple ring crossing), and per-tab viewport coordinate bounds (`(i - 1) % pageSize`).
+- **Slice flags for inner-loop tuning vs. full-corpus gate:** When full-corpus generation is
+  expensive (e.g. solver-verified levels, Monte Carlo checks, or embeddings taking minutes),
+  add a `--only` / `--slice` / `--levels` flag to the generator CLI for fast inner-loop
+  iteration on specific items without clobbering untouched outputs — then run the full-corpus
+  verification gate (and a full rebuild whenever shared constants or global rules changed)
+  before committing.
 - "The next crawl/import will fix it" is **not** a migration: records that are no longer
   fetched will never be corrected, and the user sees the wrong state meanwhile.
 - Take a backup before a migration or destructive rebuild.
