@@ -1,0 +1,40 @@
+{
+  "name": "webgame-starter",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Deterministic, automation-first web game starter (Vite + TypeScript + Canvas 2D).",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "node tools/wg.mjs dev",
+    "build": "vite build",
+    "build:e2e": "vite build --mode e2e --outDir dist-e2e",
+    "preview": "node tools/wg.mjs preview",
+    "verify": "node tools/wg.mjs verify",
+    "verify:fast": "node tools/wg.mjs verify --fast",
+    "doctor": "node tools/wg.mjs doctor",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test -c tools/playwright.config.ts",
+    "test:visual": "playwright test -c tools/playwright.config.ts --project=visual",
+    "visual:update": "node tools/wg.mjs visual:update",
+    "playtest": "node tools/wg.mjs playtest",
+    "perf": "node tools/wg.mjs perf",
+    "assets": "node tools/wg.mjs assets",
+    "shot": "node tools/wg.mjs shot",
+    "watch": "node tools/wg.mjs watch",
+    "hooks:install": "node tools/wg.mjs hooks:install",
+    "clean": "node tools/wg.mjs clean"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.10.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "axe-core": "^4.14.0",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
+  }
+}

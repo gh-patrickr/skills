@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*-preview/
+*-preview-pages/
+*.pyc
+.DS_Store

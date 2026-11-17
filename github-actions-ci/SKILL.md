@@ -1,0 +1,76 @@
+---
+name: github-actions-ci
+description: MANDATORY on EVERY interaction in any repository with GitHub Actions (.github/workflows/) — trigger immediately at the start and end of each interaction to inspect recent GitHub Actions workflow runs, diagnose and fix any failing runs, push the fix, and wait until the latest workflow run completes with success.
+---
+
+# Mandatory GitHub Actions CI Check & Fix Skill
+
+**MANDATORY RULE FOR EVERY INTERACTION:**
+Whenever working in a repository with `.github/workflows/` (or a GitHub remote), you **MUST** check the status of recent GitHub Actions runs on **every interaction**, fix any failing workflows before concluding, and verify that the triggered run on GitHub Actions finishes with `success` (runs typically complete in `< 30 seconds`).
+
+## 1. Check Recent GitHub Actions Runs (Every Interaction)
+
+First, determine the `OWNER/REPO` from `git remote get-url origin`.
+
+If `gh` is installed, you can run:
+```bash
+gh run list -R OWNER/REPO --limit 15
+```
+
+On macOS VMs where `gh` is not installed, authenticate using the macOS keychain Git credential helper (`git credential fill`) and query the GitHub Actions REST API directly:
+
+```bash
+REPO_SLUG=$(git remote get-url origin | sed -E 's#.*github\.com(:|/)([^/]+/[^/.]+)(\.git)?$#\2#')
+TOKEN=$(printf "protocol=https\nhost=github.com\n\n" | git credential fill | awk -F= '/^password=/{print $2}')
+
+curl -sS -H "Authorization: Bearer $TOKEN" \
+  "https://api.github.com/repos/${REPO_SLUG}/actions/runs?per_page=15" | node -e '
+  const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+  for (const r of (data.workflow_runs || [])) {
+    const durSec = Math.round((new Date(r.updated_at) - new Date(r.created_at)) / 1000);
+    console.log(r.id, "#" + r.run_number, r.status, r.conclusion, `${durSec}s`, r.created_at, r.head_branch, r.head_sha.slice(0, 7), r.display_title);
+  }
+'
+```
+
+## 2. Inspect Failing Job Steps & Logs
+
+If the latest run (or recent runs) has `conclusion === "failure"`, immediately inspect the failed job and step logs:
+
+```bash
+REPO_SLUG=$(git remote get-url origin | sed -E 's#.*github\.com(:|/)([^/]+/[^/.]+)(\.git)?$#\2#')
+TOKEN=$(printf "protocol=https\nhost=github.com\n\n" | git credential fill | awk -F= '/^password=/{print $2}')
+RUN_ID="<FAILED_RUN_ID>"
+
+# 1. List jobs & steps to pinpoint the failing step and get JOB_ID
+JOB_ID=$(curl -sS -H "Authorization: Bearer $TOKEN" \
+  "https://api.github.com/repos/${REPO_SLUG}/actions/runs/${RUN_ID}/jobs" | node -e '
+  const data = JSON.parse(require("fs").readFileSync(0, "utf8"));
+  for (const j of (data.jobs || [])) {
+    console.error("Job:", j.id, j.name, j.status, j.conclusion);
+    for (const s of (j.steps || [])) {
+      console.error("  Step", s.number, s.name, s.status, s.conclusion);
+    }
+    if (j.conclusion === "failure") console.log(j.id);
+  }
+' | head -n 1)
+
+# 2. Fetch the failure log output from the failed job
+curl -sSL -H "Authorization: Bearer $TOKEN" \
+  "https://api.github.com/repos/${REPO_SLUG}/actions/jobs/${JOB_ID}/logs" | tail -n 100
+```
+
+## 3. Reproduce, Fix & Verify Locally
+
+1. Run every command executed by `.github/workflows/*.yml` locally (e.g., `npm run audit:determinism`, `npm run typecheck`, `npm test`, `npm run build:assets`, `npm run build`).
+2. Account for CI runner differences:
+   - GitHub Actions `ubuntu-latest` runners have 2 shared x64 vCPUs; performance/throughput benchmarks must have sufficient headroom (at least 2x–3x margin on local Apple Silicon) and avoid parallel subprocess CPU starvation during timed benchmarks.
+   - Verify no untracked or uncommitted local fixes were left out of the repository.
+
+## 4. Push & Wait (< 30 Seconds) to Confirm Green CI Run
+
+After committing and pushing any changes (or fixing a broken workflow), **never assume CI will pass without checking**. Because runs take less than 30 seconds:
+
+1. Push the commit/branch to `origin`.
+2. Poll/watch the newly triggered GitHub Actions run until `status === "completed"`.
+3. Verify `conclusion === "success"`. If it fails, repeat Steps 2–4 immediately until the latest run on `main` is green.

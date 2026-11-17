@@ -1,0 +1,73 @@
+name: MyWatchApp
+
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    watchOS: "11.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  Core:
+    path: Core
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+    DEAD_CODE_STRIPPING: "YES"
+
+targets:
+  MyWatchApp:
+    type: application
+    platform: watchOS
+    sources:
+      - path: Sources
+      - path: Config/PrivacyInfo.xcprivacy
+        buildPhase: resources
+    dependencies:
+      - package: Core
+        product: Core
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDisplayName: MyWatchApp
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        WKApplication: true
+        WKWatchOnly: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.mywatchapp
+        TARGETED_DEVICE_FAMILY: "4"
+        GENERATE_INFOPLIST_FILE: "NO"
+    scheme:
+      testTargets:
+        - MyWatchAppTests
+        - MyWatchAppUITests
+      gatherCoverageData: true
+      coverageTargets:
+        - MyWatchApp
+
+  MyWatchAppTests:
+    type: bundle.unit-test
+    platform: watchOS
+    sources: [WatchAppTests]
+    dependencies:
+      - target: MyWatchApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.mywatchapp.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+
+  MyWatchAppUITests:
+    type: bundle.ui-testing
+    platform: watchOS
+    sources: [UITests]
+    dependencies:
+      - target: MyWatchApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.mywatchapp.uitests
+        GENERATE_INFOPLIST_FILE: "YES"

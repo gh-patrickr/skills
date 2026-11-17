@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-e2e/
+dist-*/
+artifacts/
+.wg/
+*.local
+.DS_Store
+playwright-report/
+test-results/

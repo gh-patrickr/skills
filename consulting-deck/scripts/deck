@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Launcher: use the skill-local venv, else any python with python-pptx, else explain.
+set -euo pipefail
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$HERE")"
+PY="${DECKKIT_PYTHON:-}"
+if [ -z "$PY" ] && [ -x "$ROOT/.venv/bin/python" ]; then PY="$ROOT/.venv/bin/python"; fi
+if [ -z "$PY" ] && python3 -c "import pptx, yaml, PIL" >/dev/null 2>&1; then PY="python3"; fi
+if [ -z "$PY" ]; then
+  echo "deckkit: no Python environment with python-pptx/PyYAML/Pillow found." >&2
+  echo "Run: $ROOT/scripts/bootstrap.sh" >&2
+  exit 127
+fi
+exec "$PY" "$HERE/deck.py" "$@"

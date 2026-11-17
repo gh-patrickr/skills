@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Fast local gate: types, architecture lint, unit tests, then a smoke e2e run.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+if [ ! -d node_modules ]; then
+  echo "webgame: node_modules missing, skipping pre-commit (run npm install)"
+  exit 0
+fi
+exec node tools/wg.mjs verify --fast

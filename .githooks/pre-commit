@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+echo "Running pre-commit privacy & secret scan..."
+python3 scripts/check_privacy.py --staged
+
+echo "Running skill catalog validation..."
+python3 scripts/validate_skills.py

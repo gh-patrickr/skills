@@ -1,0 +1,118 @@
+# Board update — seven-slide skeleton. No dividers: a quarterly update this short
+# is navigated by its kickers. Every slide states its `purpose`.
+# Rule: no page without a decision or a number.
+meta:
+  title: "Q3 2026 performance and the three decisions we need"
+  subtitle: "[One-line answer]"
+  client: "Board of Directors"
+  author: "[CEO / CFO]"
+  date: "[Month Year]"
+  confidentiality: "Confidential — board use only"
+  palette: graphite
+  max_slides: 9
+
+sources:
+  s1: "Management accounts, Q3 2026 (unaudited)"
+  s2: "Team analysis"
+
+slides:
+  - layout: cover
+    eyebrow: "Board meeting"
+    title: "Trading is in line; three decisions are needed before December"
+    subtitle: "[Headline result and the ask]"
+    purpose: "Sets the frame: in line, with three decisions to take."
+
+  - layout: summary
+    title: "We are 2% behind plan on EBIT and need three decisions"
+    messages:
+      - {lead: "Trading", text: "[Revenue €Xm, +Y% YoY, Z% versus plan; driver]"}
+      - {lead: "Margin", text: "[EBIT €Xm, margin X%, the one reason it moved]"}
+      - {lead: "Decisions", text: "[The three approvals required, with the number attached to each]"}
+    banner: "[What happens if the board approves all three, and by when]"
+    purpose: "One page a director can read in the lift and still vote."
+
+  - layout: content
+    title: "[Headline: what moved and by how much]"
+    takeaway: "[Why it moved]"
+    kicker: "01 · Performance"
+    source: s1
+    split: 0.46
+    purpose: "Explains the variance against plan in one exhibit plus three numbers."
+    slots:
+      left:
+        kind: kpi
+        items:
+          - {value: "[+8%]", label: "Revenue growth", delta: "[Plan +6%]", tone: positive}
+          - {value: "[11.4%]", label: "EBIT margin", delta: "[-80 bps YoY]", tone: negative}
+          - {value: "[0.9x]", label: "Net debt / EBITDA", delta: "[Covenant 3.0x]", tone: neutral}
+      right:
+        kind: chart
+        chart: column
+        categories: ["Q1", "Q2", "Q3", "Q4E"]
+        series: [{name: "[EBIT margin]", values: [12.2, 11.9, 11.4, 11.8]}]
+        label: all
+        label_fmt: "0.0%"
+        highlight: 2
+
+  - layout: content
+    title: "[Segment or region: who is carrying the variance]"
+    kicker: "01 · Performance"
+    source: s1
+    purpose: "Localises the variance so the board knows which business to question."
+    slots:
+      full:
+        kind: table
+        columns:
+          - {label: "Segment", width: 1.8}
+          - {label: "Revenue, €m", align: r}
+          - {label: "vs plan", align: r}
+          - {label: "EBIT margin", align: r}
+          - {label: "vs LY, bps", align: r}
+        rows:
+          - ["[Segment A]", "128", "+4%", "14.1%", "-60"]
+          - ["[Segment B]", "86", "-3%", "8.2%", "-140"]
+          - ["[Segment C]", "54", "+9%", "17.0%", "+30"]
+        total: true
+        columns_total: ["Total", "268", "+2%", "11.4%", "-80"]
+
+  - layout: content
+    title: "Three approvals unlock the Q4 plan"
+    kicker: "02 · Decisions"
+    source: s2
+    purpose: "Puts the three decisions on one page with the number attached to each."
+    slots:
+      full:
+        kind: cards
+        items:
+          - {title: "[Decision 1]", text: "[What, why now]", metric: "[€4.2m]", metric_label: "[Capex, Q4]"}
+          - {title: "[Decision 2]", text: "[What, why now]", metric: "[€1.8m]", metric_label: "[Opex, annualised]"}
+          - {title: "[Decision 3]", text: "[What, why now]", metric: "[Dec 12]", metric_label: "[Decision deadline]"}
+
+  - layout: content
+    title: "[The two risks that would change the answer]"
+    kicker: "02 · Decisions"
+    source: s2
+    split: 0.55
+    purpose: "Names the downside and what we are not asking for, so the ask is bounded."
+    slots:
+      left:
+        kind: table
+        size: 10
+        columns:
+          - {label: "Risk"}
+          - {label: "Impact", align: r}
+          - {label: "Mitigation"}
+        rows:
+          - ["[Risk 1]", "[-€3m]", "[Action]"]
+          - ["[Risk 2]", "[+2 weeks]", "[Action]"]
+      right:
+        kind: callout
+        title: "What we are not asking for"
+        text: "[The thing the board might expect us to ask for, and why the plan does not need it this quarter]"
+        tone: neutral
+
+  - layout: end
+    title: "Recommendation"
+    subtitle: "Approve all three; we report against them at the December meeting"
+    contact: "[CEO · ceo@company.example]"
+    purpose: "Closes with the decision and the date it is reviewed."

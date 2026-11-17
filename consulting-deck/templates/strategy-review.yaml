@@ -1,0 +1,178 @@
+# Strategy review — 11-slide skeleton. Vanilla default: no section dividers.
+# Every slide states its `purpose`; run `deck outline` and delete anything whose
+# purpose you cannot finish in one line. Replace every [bracket].
+# Add dividers only if the deck grows past ~15 pages and a section runs 3+ pages.
+meta:
+  title: "[Answer in one sentence — what the audience should do]"
+  subtitle: "[How, in one line]"
+  client: "[Client]"
+  author: "[Team]"
+  date: "[Month Year]"
+  confidentiality: "Confidential — draft for discussion"
+  palette: navy
+  max_slides: 14
+
+sources:
+  s1: "[Filing / accounts, year, page]"
+  s2: "[Official statistic, vintage]"
+  s3: "Team analysis"
+
+slides:
+  - layout: cover
+    title: "[Decision title, not a topic]"
+    subtitle: "[The one-line answer]"
+    purpose: "States the decision and the answer before page 2."
+
+  - layout: summary
+    title: "[The answer, with its number]"
+    messages:
+      - {lead: "[Claim 1]", text: "[Evidence in one sentence with a number]"}
+      - {lead: "[Claim 2]", text: "[Evidence in one sentence with a number]"}
+      - {lead: "[Claim 3]", text: "[Evidence in one sentence with a number]"}
+    banner: "[What it is worth, and when]"
+    purpose: "Carries the whole argument and the ask for anyone who reads one page."
+
+  - layout: content
+    title: "[What is happening, with a number]"
+    takeaway: "[Why it matters]"
+    kicker: "01 · Where we are"
+    source: s1
+    split: 0.45
+    purpose: "Establishes the premise every later page depends on."
+    slots:
+      left:
+        kind: bullets
+        items:
+          - {lead: "[Driver 1]", text: "[Evidence with a number]"}
+          - {lead: "[Driver 2]", text: "[Evidence with a number]"}
+          - {lead: "[Driver 3]", text: "[Evidence with a number]"}
+      right:
+        kind: chart
+        chart: column
+        categories: ["FY23", "FY24", "FY25"]
+        series: [{name: "[Metric]", values: [100, 108, 118]}]
+        label: all
+        label_fmt: "#,##0"
+
+  - layout: content
+    title: "[The bridge from A to B, and what explains it]"
+    kicker: "01 · Where we are"
+    source: s3
+    purpose: "Attributes the change to named drivers so the response can be targeted."
+    slots:
+      full:
+        kind: chart
+        chart: waterfall
+        categories: ["Start", "Driver 1", "Driver 2", "Driver 3", "End"]
+        series: [{name: "[€m]", values: [100, 18, -12, -4, 102]}]
+        waterfall_totals: [true, false, false, false, true]
+        label_fmt: "#,##0"
+
+  - layout: content
+    title: "[Which parts of the business carry the gap]"
+    kicker: "01 · Where we are"
+    source: s1
+    purpose: "Shows where the problem is concentrated, by segment or customer."
+    slots:
+      full:
+        kind: table
+        columns:
+          - {label: "Segment"}
+          - {label: "Revenue", align: r}
+          - {label: "Growth", align: r}
+          - {label: "Gross margin", align: r}
+          - {label: "EBIT margin", align: r}
+        rows:
+          - ["[Segment A]", "218", "+1.2%", "39.5%", "14.8%"]
+          - ["[Segment B]", "96", "+4.5%", "34.0%", "9.1%"]
+          - ["[Segment C]", "74", "+9.8%", "31.5%", "4.2%"]
+        total: true
+        columns_total: ["Total", "388", "+3.4%", "36.4%", "11.1%"]
+
+  - layout: content
+    title: "[The two pools worth entering, and why now]"
+    kicker: "02 · Where to play"
+    source: s2
+    purpose: "Makes the portfolio choice: what to invest in and what to stop."
+    slots:
+      full:
+        kind: matrix
+        x_axis: ["Low market growth", "High market growth"]
+        y_axis: ["Weak right to win", "Strong right to win"]
+        quadrants: ["Defend", "Invest", "Divest", "Build"]
+        points:
+          - {label: "[Segment A]", x: 0.30, y: 0.82}
+          - {label: "[Segment B]", x: 0.72, y: 0.78, highlight: true}
+          - {label: "[Segment C]", x: 0.82, y: 0.30}
+
+  - layout: content
+    title: "[What customers actually value, in three numbers]"
+    kicker: "02 · Where to play"
+    source: s1
+    purpose: "Explains why we lose or win, in evidence the audience cannot argue with."
+    slots:
+      top:
+        kind: kpi
+        items:
+          - {value: "[31]", label: "[Metric]", delta: "[Peer 44]", tone: negative}
+          - {value: "[91%]", label: "[Metric]", delta: "[Peer 96%]", tone: negative}
+          - {value: "[96]", label: "[Metric]", delta: "[Peer = 100]", tone: neutral}
+      bottom:
+        kind: bullets
+        items:
+          - {lead: "[Insight 1]", text: "[Evidence with a number]"}
+          - {lead: "[Insight 2]", text: "[Evidence with a number]"}
+
+  - layout: content
+    title: "[Three moves that deliver the answer]"
+    kicker: "03 · How to win"
+    source: s3
+    purpose: "Converts the diagnosis into the owned, costed moves being approved."
+    slots:
+      full:
+        kind: cards
+        emphasis: 1
+        items:
+          - {title: "[Move 1]", metric: "[€18m]", metric_label: "[Benefit by 2028]", bullets: ["[Action]", "[Number]", "[Risk cap]"]}
+          - {title: "[Move 2]", metric: "[€9m]", metric_label: "[Benefit by 2028]", bullets: ["[Action]", "[Number]", "[Risk cap]"]}
+          - {title: "[Move 3]", metric: "[€12m]", metric_label: "[Benefit by 2028]", bullets: ["[Action]", "[Number]", "[Risk cap]"]}
+
+  - layout: content
+    title: "[What the moves are worth, and by when]"
+    kicker: "03 · How to win"
+    source: s3
+    purpose: "Proves the arithmetic of the plan and sequences it with gates."
+    slots:
+      full:
+        kind: timeline
+        phases:
+          - {label: "[Q1 2027]", title: "[Phase]", text: "[Deliverable]", gate: "[Gate]"}
+          - {label: "[Q2 2027]", title: "[Phase]", text: "[Deliverable]", gate: "[Gate]"}
+          - {label: "[H2 2027]", title: "[Phase]", text: "[Deliverable]", gate: "[Gate]"}
+          - {label: "[2028]", title: "[Phase]", text: "[Deliverable]", gate: "[Gate]"}
+
+  - layout: content
+    title: "[The risks that could stop us, each owned]"
+    kicker: "03 · How to win"
+    source: s3
+    purpose: "Gives the board the governance: what breaks the plan, who owns it."
+    slots:
+      full:
+        kind: table
+        size: 10
+        columns:
+          - {label: "Risk", width: 2.2}
+          - {label: "Likelihood", align: c}
+          - {label: "Impact"}
+          - {label: "Mitigation", width: 2.2}
+          - {label: "Owner", align: c}
+        rows:
+          - ["[Risk 1]", "High", "[-€6m]", "[Mitigation]", "[CCO]"]
+          - ["[Risk 2]", "Medium", "[Delay 2 qtrs]", "[Mitigation]", "[COO]"]
+          - ["[Risk 3]", "Low", "[-€3m]", "[Mitigation]", "[CFO]"]
+
+  - layout: end
+    title: "Questions and discussion"
+    subtitle: "[What is in the appendix]"
+    contact: "[Team · email]"
+    purpose: "Closes on the ask and names the backup material."

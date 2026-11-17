@@ -1,0 +1,289 @@
+# 13 pages: one argument, no filler. Every slide carries a `purpose:` line so the
+# delete test is visible in `deck outline`. Section dividers were deliberately
+# dropped — at this length the kickers do the navigation and save three pages.
+meta:
+  title: "Restoring 340 bps of margin while returning to growth"
+  subtitle: "Three moves, self-funded, delivering €74m EBIT by 2028"
+  client: "Northwind Industrial"
+  author: "Strategy team"
+  date: "October 2026"
+  confidentiality: "Illustrative case study — all figures synthetic"
+  palette: navy
+  font: Arial
+  cover_style: dark
+  max_slides: 14
+
+sources:
+  s1: "Northwind FY25 annual report, pp. 14–19; management accounts"
+  s2: "Northwind management accounts, FY21–FY25; team analysis"
+  s3: "Eurostat industrial distribution statistics, Aug 2026; team analysis"
+  s4: "Northwind customer survey, H1 2026 (n=412); win/loss interviews"
+  s5: "Team analysis"
+
+slides:
+  # 1 ------------------------------------------------------------------- cover
+  - layout: cover
+    eyebrow: "Strategy review · board discussion"
+    title: "Restoring 340 bps of margin while returning to growth"
+    subtitle: "Three moves, self-funded, delivering €74m EBIT by 2028"
+    purpose: "Names the decision and the answer before anyone reads a page."
+    notes: "Frame the decision: approve the three moves and the 2027 investment envelope."
+
+  # 2 --------------------------------------------------------- executive summary
+  - layout: summary
+    title: "Three moves restore 340 bps of margin and €512m revenue by 2028"
+    messages:
+      - lead: "Reprice the core portfolio"
+        text: "Selective increases worth €18m on the top 400 SKUs, protecting entry price points and 92% of volume."
+      - lead: "Rebalance toward specialty"
+        text: "Shift 8 points of revenue into services and automation, where gross margin runs 6 points higher."
+      - lead: "Take 12% out of indirect cost"
+        text: "Consolidating three plants into two and renegotiating freight frees €12m a year from 2027."
+    banner: "Self-funded from Q3 2027, with €96m of cumulative free cash flow over the plan period."
+    purpose: "The whole argument on one page, including the ask — a reader who stops here still has the answer."
+    notes: "The ask is approval of the moves and €9m of one-off investment in 2027."
+
+  # 3 ----------------------------------------------------------- price vs cost
+  - layout: content
+    title: "Volume held, but price realisation lagged input-cost inflation"
+    takeaway: "Unrecovered cost has taken 180 bps of EBIT margin since FY23"
+    kicker: "01 · Where we are"
+    source: s2
+    split: 0.44
+    purpose: "Proves the problem is cost, not demand, and quantifies the gap every later page depends on."
+    slots:
+      left:
+        kind: bullets
+        items:
+          - lead: "Input costs"
+            text: "Resin and freight rose 22% while realised price moved 9%."
+          - lead: "Mix"
+            text: "Growth came from entry-tier lines at half the gross margin."
+          - lead: "Service"
+            text: "On-time delivery fell to 91%, against 96% for peers."
+          - lead: "Consequence"
+            text: "EBIT margin fell from 12.9% to 11.1% on €49m of new revenue."
+      right:
+        kind: chart
+        chart: column
+        categories: ["FY21", "FY22", "FY23", "FY24", "FY25"]
+        series:
+          - {name: "Input-cost index", values: [100, 104, 112, 118, 122]}
+          - {name: "Realised-price index", values: [100, 102, 104, 107, 109]}
+        highlight: "Input-cost index"
+        label: all
+        label_fmt: "#,##0"
+        value_max: 135
+        legend: true
+
+  # 4 ------------------------------------------------------------- margin bridge
+  - layout: content
+    title: "Cost inflation explains the margin loss; pricing recovery only half of it"
+    kicker: "01 · Where we are"
+    source: s2
+    purpose: "Attributes the loss to four specific drivers, so the response can be targeted rather than generic."
+    slots:
+      full:
+        kind: chart
+        chart: waterfall
+        categories: ["FY23 EBIT", "Price", "Volume", "Input cost", "Mix", "Indirect", "FY25 EBIT"]
+        series:
+          - {name: "EBIT (€m)", values: [53.1, 17.5, 6.5, -22.0, -3.0, -0.9, 51.2]}
+        waterfall_totals: [true, false, false, false, false, false, true]
+        label_fmt: "#,##0.0"
+        unit: "€m"
+
+  # 5 --------------------------------------------------------- segment economics
+  - layout: content
+    title: "Automation grows fastest but earns the lowest margin"
+    takeaway: "Services and core MRO fund the portfolio; automation is sub-scale at 6% share"
+    kicker: "01 · Where we are"
+    source: s1
+    purpose: "Shows where the margin actually sits by segment — the bridge from the problem to where to play."
+    slots:
+      full:
+        kind: table
+        columns:
+          - {label: "Segment"}
+          - {label: "Revenue, €m", align: r}
+          - {label: "Growth, FY25", align: r}
+          - {label: "Gross margin", align: r}
+          - {label: "EBIT margin", align: r}
+          - {label: "EBIT, €m", align: r}
+        rows:
+          - ["Core MRO", "218", "+1.2%", "39.5%", "14.8%", "32.3"]
+          - ["Flow control", "96", "+4.5%", "34.0%", "9.1%", "8.7"]
+          - ["Automation", "74", "+9.8%", "31.5%", "4.2%", "3.1"]
+          - ["Services", "73", "+8.1%", "42.0%", "16.5%", "12.0"]
+          - ["Corporate costs", "—", "—", "—", "—", "-4.9"]
+        total: true
+        columns_total: ["Total", "461", "+3.4%", "36.4%", "11.1%", "51.2"]
+
+  # 6 ------------------------------------------------------------------ 2x2
+  - layout: content
+    title: "Services and automation are the only fast-growing pools we can credibly enter"
+    kicker: "02 · Where to play"
+    source: s3
+    purpose: "Chooses two pools and says what to stop — the only page allowed to make the portfolio choice."
+    slots:
+      full:
+        kind: matrix
+        x_axis: ["Low market growth", "High market growth"]
+        y_axis: ["Weak right to win", "Strong right to win"]
+        quadrants: ["Defend", "Invest", "Divest", "Build"]
+        points:
+          - {label: "Core MRO", x: 0.28, y: 0.86}
+          - {label: "Services", x: 0.72, y: 0.80, highlight: true}
+          - {label: "Automation", x: 0.86, y: 0.30, highlight: true}
+          - {label: "Flow control", x: 0.44, y: 0.46}
+          - {label: "Aftermarket parts", x: 0.36, y: 0.52}
+          - {label: "Water treatment", x: 0.60, y: 0.18}
+
+  # 7 ------------------------------------------------------------------- KPIs
+  - layout: content
+    title: "Customers leave us on service, not on price"
+    takeaway: "Price is 4 points below peers in the core, where we are the primary supplier"
+    kicker: "02 · Where to play"
+    source: s4
+    split_v: 0.36
+    purpose: "Explains why revenue leaks and reveals the pricing headroom that move one depends on."
+    slots:
+      top:
+        kind: kpi
+        items:
+          - {value: "31", label: "Net promoter score", delta: "Peers 44", tone: negative}
+          - {value: "91%", label: "On-time delivery", delta: "Peers 96%", tone: negative}
+          - {value: "96", label: "Price index vs peers", delta: "Peers = 100", tone: neutral}
+          - {value: "8.2%", label: "Account churn", delta: "+1.9 pts YoY", tone: negative}
+      bottom:
+        kind: bullets
+        size: 12
+        items:
+          - lead: "Churn is operational"
+            text: "61% of lost accounts cite delivery reliability; only 9% cite price."
+          - lead: "Price headroom exists"
+            text: "We are the primary supplier for 70% of core accounts yet price 4 points below peers."
+          - lead: "Services follow reliability"
+            text: "Automation customers buy 2.3× more services once on-time delivery clears 95%."
+
+  # 8 ---------------------------------------------------------------- the moves
+  - layout: content
+    title: "Three moves deliver the plan without new capital"
+    takeaway: "Each move is owned, priced and reversible if the first gate is missed"
+    kicker: "03 · How to win"
+    source: s5
+    purpose: "Converts the diagnosis into three owned, costed moves — the core of what the board is asked to approve."
+    slots:
+      full:
+        kind: cards
+        emphasis: 1
+        items:
+          - title: "Reprice the core"
+            metric: "€18m"
+            metric_label: "Price benefit by 2028"
+            bullets:
+              - "6% list increase on the top 400 SKUs, in two waves"
+              - "Hold entry price points to protect volume"
+              - "€18m price, capped at €6m of volume at risk"
+          - title: "Rebalance to specialty"
+            metric: "€9m"
+            metric_label: "Mix benefit by 2028"
+            bullets:
+              - "Lift service attach from 34% to 50%"
+              - "Two automation partnerships rather than a build"
+              - "€9m mix benefit at a 6-point margin premium"
+          - title: "Take out indirect cost"
+            metric: "€12m"
+            metric_label: "Run-rate saving by 2028"
+            bullets:
+              - "Consolidate three plants into two"
+              - "Renegotiate freight and packaging"
+              - "€12m run-rate saving by 2028"
+
+  # 9 ------------------------------------------------------------ EBIT bridge
+  - layout: content
+    title: "Price and cost, not volume, deliver the €23m of EBIT improvement"
+    kicker: "03 · How to win"
+    source: s5
+    purpose: "Proves the arithmetic: the plan adds €23m and shows which moves pay for it."
+    slots:
+      full:
+        kind: chart
+        chart: waterfall
+        categories: ["FY25 EBIT", "Price", "Mix", "Indirect cost", "Investment", "Inflation", "FY28 EBIT"]
+        series:
+          - {name: "EBIT (€m)", values: [51.2, 18.0, 9.0, 12.0, -9.0, -7.0, 74.2]}
+        waterfall_totals: [true, false, false, false, false, false, true]
+        label_fmt: "#,##0.0"
+        unit: "€m"
+
+  # 10 --------------------------------------------------------------- roadmap
+  - layout: content
+    title: "Four phases, each gated before the next spend is released"
+    kicker: "03 · How to win"
+    source: s5
+    purpose: "Sequences the moves and fixes the gates — answers when, and who decides, not what."
+    slots:
+      full:
+        kind: timeline
+        phases:
+          - {label: "Q1–Q2 2027", title: "Stabilise", text: "Price governance, top-400 SKU actions, service recovery plan", gate: "Pricing council live"}
+          - {label: "Q2–Q3 2027", title: "Reprice", text: "Two waves of list increases, retention guardrails live", gate: "4% realised, churn <9%"}
+          - {label: "H2 2027", title: "Rebalance", text: "Service attach programme, two automation partnerships signed", gate: "Attach at 42%, two partners"}
+          - {label: "2028", title: "Scale", text: "Plant consolidation complete, automation at 12% of revenue", gate: "€74m EBIT, 14.5% margin"}
+        milestones:
+          - {at: 0.06, text: "Board approval of the envelope"}
+          - {at: 0.32, text: "First price wave live"}
+          - {at: 0.62, text: "Both partnerships signed"}
+          - {at: 0.94, text: "Plant 3 closed"}
+
+  # 11 ----------------------------------------------------------------- risk
+  - layout: content
+    title: "Five risks, all commercial or operational, each owned and triggered"
+    kicker: "03 · How to win"
+    source: s5
+    purpose: "Shows the board what could break the plan and who owns each trigger — governance, not a list of worries."
+    slots:
+      full:
+        kind: table
+        size: 10
+        columns:
+          - {label: "Risk", width: 2.2}
+          - {label: "Likelihood", align: c}
+          - {label: "Impact"}
+          - {label: "Mitigation", width: 2.2}
+          - {label: "Owner", align: c}
+        rows:
+          - ["Volume loss on reprice", "Medium", "-€6m EBIT", "Two-wave phasing; win-back desk on top 50", "CCO"]
+          - ["Service recovery slips", "High", "Churn +2 pts", "Weekly OTIF war-room; third-party depot", "COO"]
+          - ["Partnership terms", "Medium", "Two-quarter delay", "Parallel negotiation; build option pre-priced", "CSO"]
+          - ["Plant consolidation disruption", "Medium", "-€3m in 2027", "Staged transfer with dual-running in Q3", "COO"]
+          - ["Key-account concentration", "Low", "-€8m revenue", "Executive sponsorship of the top 10 accounts", "CEO"]
+
+  # 12 ------------------------------------------------------------- next steps
+  - layout: content
+    title: "The first 90 days decide whether the plan holds"
+    takeaway: "Four gates, each with a named owner and a date"
+    kicker: "03 · How to win"
+    source: s5
+    purpose: "Turns approval into the first four commitments, with the criterion that stops the second wave."
+    split_v: 0.68
+    slots:
+      top:
+        kind: steps
+        items:
+          - {title: "Weeks 1–2 · Mandate", text: "Board approves guardrails: no more than €6m of volume at risk, no price war"}
+          - {title: "Day 30 · Architecture", text: "Segment-level list and floor prices signed off by the pricing council"}
+          - {title: "Day 60 · Execution", text: "Top 400 SKUs repriced; retention offers live for at-risk accounts"}
+          - {title: "Day 90 · Read-out", text: "Price realisation, churn and on-time delivery reported to the board"}
+      bottom:
+        kind: banner
+        label: "Kill criterion"
+        text: "If churn exceeds 10% or price realisation falls below 3% by day 90, the second price wave is stopped and the envelope returns to the board."
+
+  # 13 ------------------------------------------------------------------- end
+  - layout: end
+    title: "Questions and discussion"
+    subtitle: "Appendices available: account-level pricing, plant consolidation plan, partnership shortlist"
+    contact: "Strategy team · strategy@northwind.example"
+    purpose: "Closes with the ask still on screen and names the backup material."

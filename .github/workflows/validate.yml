@@ -1,0 +1,21 @@
+name: Validate skills
+
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**', 'docs/**', 'chore/**']
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate SKILL.md frontmatter and links
+        run: python3 scripts/validate_skills.py
+      - name: Run privacy and secret scanner
+        run: python3 scripts/check_privacy.py --all
+      - name: Run privacy scanner unit tests
+        run: python3 -m unittest scripts/test_check_privacy.py

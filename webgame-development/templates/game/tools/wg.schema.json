@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "webgame project config",
+  "type": "object",
+  "required": ["name", "budgets", "playtest"],
+  "properties": {
+    "name": { "type": "string" },
+    "devPort": { "type": "integer", "minimum": 1 },
+    "previewPort": { "type": "integer", "minimum": 1 },
+    "e2eDir": { "type": "string" },
+    "budgets": {
+      "type": "object",
+      "required": ["jsGzipKb", "cssGzipKb", "totalGzipKb", "fpsMin", "longFrameRatioMax"],
+      "properties": {
+        "jsGzipKb": { "type": "number", "minimum": 1 },
+        "cssGzipKb": { "type": "number", "minimum": 1 },
+        "totalGzipKb": { "type": "number", "minimum": 1 },
+        "fpsMin": { "type": "number", "minimum": 1 },
+        "longFrameRatioMax": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "playtest": {
+      "type": "object",
+      "required": ["seconds", "bots", "seed"],
+      "properties": {
+        "seconds": { "type": "integer", "minimum": 1 },
+        "bots": { "type": "integer", "minimum": 1 },
+        "seed": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": true
+}
