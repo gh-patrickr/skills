@@ -50,15 +50,18 @@ cat /tmp/pkg_data.tar | adb -s "$S" shell run-as PKG tar -xf -
 ```
 If `run-as` reports the installed build is not debuggable, ask the user or trigger the app's own export before uninstalling.
 
-**Keep the screen awake.** If the device locks, input and screenshots fail or show the lock screen:
+**Keep the screen awake and verify foreground launch.** If the device locks, input and screenshots fail or show the lock screen:
 ```bash
-adb -s "$S" shell input keyevent KEYCODE_WAKEUP
+adb -s "$S" shell input keyevent 224                       # KEYCODE_WAKEUP
+adb -s "$S" shell input keyevent 82                        # KEYCODE_MENU (clears non-PIN swipe guard)
+adb -s "$S" shell input touchscreen swipe 600 900 600 200 300
 adb -s "$S" shell svc power stayon true                    # stay on while charging
 adb -s "$S" shell settings put global stay_on_while_plugged_in 7   # fallback when svc power is restricted
 adb -s "$S" shell settings put system screen_off_timeout 1800000
 adb -s "$S" shell "dumpsys power | grep -E 'mWakefulness|Display Power'; dumpsys window | grep -E 'mCurrentFocus|isStatusBarKeyguard'"
 ```
-If a PIN/password lock screen is active, Android/Fire OS ignores `system screen_off_timeout` and turns the display off again in ~10 s, `wm dismiss-keyguard` / swipe only reveals the PIN pad, and `am start` launches *underneath* the lock screen. Ask the user once to unlock with their PIN and wait — do not try to bypass it or inject blind taps. When `Display Power: state=OFF`, `screencap -p` exits `0` with an **all-black PNG** (distinct from `FLAG_SECURE`, which returns `rc=1` or an empty file).
+- **Verify the `Activity:` line of `am start -W`:** `am start -W` still exits `0` with `Status: ok` when blocked behind a non-PIN swipe keyguard, resolving to `.Launcher` instead of `PKG/.MainActivity`. On Android 9 / Fire OS, `wm dismiss-keyguard` alone can be a no-op; run the wake + `82` + upward swipe sequence above and re-run `am start -W` until `Activity:` reports your target activity.
+- If a PIN/password lock screen is active, Android/Fire OS ignores `system screen_off_timeout` and turns the display off again in ~10 s, `wm dismiss-keyguard` / swipe only reveals the PIN pad, and `am start` launches *underneath* the lock screen. Ask the user once to unlock with their PIN and wait — do not try to bypass it or inject blind taps. When `Display Power: state=OFF`, `screencap -p` exits `0` with an **all-black PNG** (distinct from `FLAG_SECURE`, which returns `rc=1` or an empty file).
 
 ## 4. Screenshots: look at the app
 
@@ -104,7 +107,12 @@ adb -s "$S" shell dumpsys gfxinfo PKG reset                # reset, then play fo
 adb -s "$S" shell dumpsys gfxinfo PKG | grep -E "Total frames|Janky|50th|90th|95th|99th"
 adb -s "$S" shell dumpsys meminfo PKG | grep -E "TOTAL|Java Heap|Native Heap|Graphics"
 ```
-`gfxinfo` covers only the UI thread or RenderThread (Canvas Views). A `GLSurfaceView` renders on its own `GLThread`, so also log your own frame times (e.g. a `Choreographer`-based FPS logger to logcat).
+- **Gate on the slowest connected device:** When multiple tablets/phones are attached, check `ro.product.model`, `ro.build.version.sdk`, and `/proc/meminfo` (`MemTotal`) and treat the lowest-spec / oldest-API device as the primary FPS and memory gate. Code that hits 60 FPS on modern silicon frequently drops to `25-30 ms` (`<40 FPS`) on 2 GB RAM budget SoCs.
+- `gfxinfo` covers only the UI thread or RenderThread (Canvas Views). A `GLSurfaceView` renders on its own `GLThread`, so also log your own frame times (e.g. a `Choreographer`-based FPS logger to logcat).
+- **Fixing `>16.6 ms` frame times on budget GPUs/CPUs (`GLSurfaceView` + Canvas HUD + `AudioTrack`):**
+  1. Use `GLSurfaceView.RENDERMODE_WHEN_DIRTY` driven by a single `Choreographer` callback (`requestRender()`) instead of `RENDERMODE_CONTINUOUSLY` competing with the Canvas HUD `RenderThread`.
+  2. Dirty-gate HUD `View.invalidate()` and throttle continuous telemetry text redraws (≤15 Hz) rather than invalidating a full-screen Canvas overlay at 60 Hz.
+  3. Keep per-frame scene building allocation-free (pre-allocated primitive arrays; no per-tick boxed vectors/lists) and offload procedural `AudioTrack` synthesis to a background single-thread executor (replacing transcendental `asin`/`tanh` inner loops with arithmetic/rational approximations).
 
 ## 8. Instrumented tests on device
 
@@ -121,8 +129,7 @@ adb -s "$S" shell am get-current-user                      # tablets are often m
 adb -s "$S" shell pm list users
 adb -s "$S" shell dumpsys activity activities | grep mResumedActivity   # what's in the foreground
 ```
-If another app is in the foreground (e.g. active media playback in another user profile),
-**don't interrupt it** with installs, launches or input. Tell the user and wait or ask.
+If another app is in the foreground (e.g. active media playback in another user profile), or if the user says they are actively playtesting a build on the device, **don't interrupt it** with `adb install`, `am force-stop`, `connectedDebugAndroidTest`, or `input` commands — run JVM/Robolectric/lint/assemble gates locally, stage the APK, and wait for their go-ahead to deploy.
 - Install or launch for the active user: `adb install --user CURRENT -r app.apk`, `am start --user current ...`.
   A package installed for user 0 is not automatically available in a secondary user profile.
 - `screencap` returns rc=1 or an empty file while a `FLAG_SECURE`/DRM window is visible (video players). That's not an ADB problem.

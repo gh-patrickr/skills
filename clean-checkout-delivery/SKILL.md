@@ -228,6 +228,8 @@ git status -sb               # verify branch is synced with origin/<branch> (no 
 - Always push when a remote is configured unless the user explicitly asked to keep the
   commit local.
 - Never force-push (`git push --force`) to `main`/`master` unless explicitly instructed.
+- **Shared global checkouts (e.g. `~/.dsh/skills`) across concurrent sessions:** Never run `git checkout -b` directly inside a working tree shared by sibling agent sessions (which switches `HEAD` underneath them). Create a temporary `git worktree add <scratch>/wt -b <branch> origin/main`, commit/push from that worktree, fast-forward `origin/main`, and remove the worktree when finished.
+- **Remote tag conflicts (`would clobber existing tag`) & milestone binaries:** If `git fetch` or `git push` rejects a tag moved on `origin` (e.g. by CI release automation), compare `git ls-remote --tags origin <tag>` with local `git rev-parse <tag>`, sync remote tags cleanly via `git fetch origin --tags --force`, and push new release tags explicitly (`git push origin refs/tags/<new-tag>`) instead of `git push --tags`. When asked to preserve named release binaries alongside tags, save version-stamped filenames (e.g. `releases/<app>-<tag>-release.apk`) so subsequent builds never overwrite earlier milestones.
 - If no remote is configured or a push is blocked by missing credentials/permissions, leave
   the branch clean locally and report the exact commit SHA and branch to push in the final
   report.

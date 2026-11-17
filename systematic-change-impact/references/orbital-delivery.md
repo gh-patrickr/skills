@@ -32,6 +32,13 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
 5. **Headless 1920×1200 GLES 3.0 + Stereo Audio recording (`scripts/record_playthrough.sh`)**:
    - Uses `scripts/gles_offscreen_recorder.c` (`eglCreatePbufferSurface` on Mesa `llvmpipe`) + Robolectric `@GraphicsMode(GraphicsMode.Mode.NATIVE)` + `ProceduralAudioSynthesizer` (`44100 Hz` stereo `f32le`) muxed via `ffmpeg` and uploaded to Google Drive (`--upload-gdrive` via `gdrive mutate update/upload`).
    - Outer-planet missions at `5x` playback speed require `maxFlightFrames >= 650` (`~21.6 s` real time) to reach target rendezvous before recording ends.
+6. **Visual planet sizing vs. N-body mass & natural satellites (`SolarSystem.kt`, `MotionStrategy.kt`)**:
+   - Never modify `SolarSystem.PLANETS` or solar masses for visual legibility (`SolarSystemStabilityTest` enforces exact IAU mass ratios and 1,000-year symplectic Yoshida stability); scale `BodyVisual.minScreenRadiusDp` and `SceneBuilder` visual world-to-screen clamping instead.
+   - Natural planetary moons (`parentIndex > 0 && !isPlayerPlaced`, e.g. `"moon"` around `"earth"`) follow analytic `KeplerRailMotionStrategy.placeOnRails` around their N-body parent planet and are skipped in planet-planet `computeAccelerations` (avoiding double-pulling the Earth-Moon barycenter mass) while acting normally on the capsule in `PhysicsKernel.bodyAcceleration`.
+7. **Planning preview, camera continuity & `RESET` semantics (`GameController.kt`)**:
+   - `previewTicksFor` covers `maxSimulationTicks` so full trajectory hit/miss and closest-approach rendezvous state are visible before `START`.
+   - Keep camera center and zoom (`pxPerUnit`) unchanged when transitioning from `PLANNING` into `RUNNING` (`startSimulation` / `stepDisplayFrame`).
+   - Explicit `RESET` (`clearPlacements = true`) clears player-placed bodies and resets `budgetSpent` to `0`; tapping the world after a run (`clearPlacements = false`) rewinds to $t = 0$ while preserving placements for adjustment.
 
 ## Verification gate recipe
 
