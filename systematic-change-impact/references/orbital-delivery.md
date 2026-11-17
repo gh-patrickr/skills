@@ -15,7 +15,7 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
 - **Campaign JSON writer**: `:cli-generator:generateCampaignLevels` (`CampaignGeneratorMain.kt` → `LevelGenerator.generateCampaign()`).
   - Never hand-edit `goldenSolution`, `capsuleLaunch`, or `bonusBuoy` coordinates in `level-*.json`.
   - When invoked via Gradle (`./gradlew :cli-generator:generateCampaignLevels`), the subproject working directory is `cli-generator/`; `CampaignGeneratorMain.kt` resolves `../android-app/src/main/assets/levels` and writes each verified level JSON immediately upon completion.
-- **Gradle in sandboxed Linux VMs**: Always pass `ANDROID_HOME=/home/antigravity/android-sdk` and `--no-daemon --offline` (or use `scripts/record_playthrough.sh` which builds the local proxy truststore automatically).
+- **Gradle in sandboxed Linux VMs**: Always pass `ANDROID_HOME=$HOME/android-sdk` and `--no-daemon --offline` (or use `scripts/record_playthrough.sh` which builds the local proxy truststore automatically).
 
 ## Hard-earned domain rules (N-body solver & campaign generation)
 
@@ -37,17 +37,17 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
 
 ```bash
 # 1. Regenerate campaign levels whenever physics, solver, or mission blueprints change
-ANDROID_HOME=/home/antigravity/android-sdk ./gradlew :cli-generator:generateCampaignLevels --no-daemon --offline
+ANDROID_HOME=$HOME/android-sdk ./gradlew :cli-generator:generateCampaignLevels --no-daemon --offline
 
 # 2. Layer 1 & 2: 120 Hz physics invariants + 100% campaign bot (1/2/3 stars, jitterHitRate >= 0.80, anti-frustration)
-ANDROID_HOME=/home/antigravity/android-sdk ./gradlew :core-engine:test :cli-generator:test --no-daemon --offline
+ANDROID_HOME=$HOME/android-sdk ./gradlew :core-engine:test :cli-generator:test --no-daemon --offline
 
 # 3. Layer 3 & 4: Robolectric UI, editor solver, audio DSP & Android Lint
-ANDROID_HOME=/home/antigravity/android-sdk ./gradlew :android-app:testDebugUnitTest :android-app:lintDebug --no-daemon --offline
+ANDROID_HOME=$HOME/android-sdk ./gradlew :android-app:testDebugUnitTest :android-app:lintDebug --no-daemon --offline
 
 # 4. OKF documentation gate
 python3 scripts/okf.py --write && python3 scripts/okf.py --check && python3 tests/unit/test_okf_docs.py
 
 # 5. Playthrough video + stereo audio capture & Google Drive update
-ANDROID_HOME=/home/antigravity/android-sdk ./scripts/record_playthrough.sh --levels 1,2,13 --upload-gdrive
+ANDROID_HOME=$HOME/android-sdk ./scripts/record_playthrough.sh --levels 1,2,13 --upload-gdrive
 ```
