@@ -22,6 +22,7 @@ dependencies and download folders are not projects.
 Recognise a project by the presence of any of:
 
 `pyproject.toml`, `uv.lock`, `requirements.txt`, `package.json`, `go.mod`, `Cargo.toml`,
+`build.gradle.kts`, `settings.gradle.kts`, `gradlew`, `pom.xml`,
 `project.yml`, `*.xcodeproj`, `Package.swift`, `Makefile`, `CMakeLists.txt`, `Gemfile`,
 `composer.json`, `*.csproj`, `docker-compose.yml`, `Procfile`, `justfile`, or a source tree
 with its own `README` and build script.
@@ -175,9 +176,9 @@ Rules:
 Run the gates that exist in **that** project, from its root. Discover them; do not invent
 new ones:
 
-- tests (pytest / vitest / jest / `go test ./...` / `cargo test` / `xcodebuild test`);
+- tests (pytest / vitest / jest / `go test ./...` / `cargo test` / `./gradlew check` / `xcodebuild test`);
 - lint/format (ruff, eslint, golangci-lint, clippy, swiftlint);
-- build/typecheck (`tsc`, `vite build`, `go build`, `cargo build`, `xcodebuild build`);
+- build/typecheck (`tsc`, `vite build`, `go build`, `cargo build`, `./gradlew assemble`, `xcodebuild build`);
 - project-specific gates, when present:
   - privacy & secrets scan / pre-commit hook (`scripts/check_privacy.py` or `.githooks/pre-commit`) —
     fix any private data, keys, personal information, or internal/household details before
@@ -190,6 +191,17 @@ new ones:
   - GitHub Actions (`.github/workflows/`) → inspect recent runs, push, and wait until the
     triggered workflow run completes with `conclusion === "success"` (`github-actions-ci`).
 - **JVM / Gradle in proxy-sandboxed Linux VMs:** if `./gradlew` fails with `InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty` (missing `/etc/ssl/certs/java/cacerts`), import `/etc/ssl/certs/ca-certificates.crt` into `/tmp/cacerts` via `keytool -importcert -noprompt -keystore /tmp/cacerts -storepass changeit` and pass `-Djavax.net.ssl.trustStore=/tmp/cacerts -Djavax.net.ssl.trustStorePassword=changeit` plus `-Dhttp.proxyHost` / `-Dhttps.proxyHost` from `$HTTPS_PROXY` in `JAVA_TOOL_OPTIONS`.
+
+### Sandboxed JVM / Gradle truststore & proxy bootstrap
+
+In container/VM sandboxes where outbound HTTPS goes through a local MITM proxy
+(`HTTPS_PROXY`, `SSL_CERT_FILE`) and `/etc/ssl/certs/java/cacerts` is missing, `./gradlew`
+fails with `InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty`.
+Import `$SSL_CERT_FILE` into `$HOME/.gradle/cacerts.p12` (`keytool -importcert -noprompt
+-trustcacerts -alias sandbox-ca -file "$SSL_CERT_FILE" -keystore "$HOME/.gradle/cacerts.p12"
+-storetype PKCS12 -storepass changeit`) and configure `systemProp.javax.net.ssl.trustStore`,
+`systemProp.javax.net.ssl.trustStoreType=PKCS12`, and `systemProp.http(s).proxyHost/Port` in
+`$HOME/.gradle/gradle.properties` (plus `GRADLE_OPTS` for the initial `gradlew` download).
 
 Python + OKF project example:
 

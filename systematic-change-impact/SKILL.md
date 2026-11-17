@@ -71,6 +71,7 @@ rule, never evidence that the stored data was updated.
 | Schema / migration | the whole store | append-only migration, backup first, protected-data check, restart + probe |
 | Protected-data helper | protected tables | project verify command + backup; never `DELETE`/`DROP` |
 | Index / cache / generated artefacts | index documents, cache entries, generated files | invalidate and rebuild through the writer |
+| Simulation / physics / procedural generator rule | generated level/scenario corpus, golden replays, `schemaVersion` | bump `schemaVersion` if schema changed, regenerate entire corpus via CLI generator, run automated solvability/playtester audit over all assets |
 | UI / query / template only | none | no rebuild; still run the runtime probe |
 
 **Default assumption: systematic.** "One-off" is allowed only for a genuinely single-record
@@ -158,6 +159,24 @@ When in doubt, treat it as systematic. Say so explicitly in the final answer
   iteration on specific items without clobbering untouched outputs — then run the full-corpus
   verification gate (and a full rebuild whenever shared constants or global rules changed)
   before committing.
+- **Calibrate moving, field-affected targets/portals without self-triggering or Equivalence-Principle symmetry:**
+  1. *Non-triggering probe radius (`0.001`) in shooting loops*: When back-solving a moving
+     target or portal's $t=0$ initial position $\mathbf{r}_0$ from a desired intercept
+     $\mathbf{r}(t_{\text{hit}})$ via iterative forward simulation up to `targetTick`, set
+     the probe target/portal radius to `0.001` during calibration so an early pass does not
+     prematurely terminate or teleport the trajectory before `targetTick`.
+  2. *Break Equivalence-Principle symmetry in `simUnguided` vs. `simGuided`*: When both the
+     projectile and a moving target/portal fall through the same gravitational field, placing
+     a player lens body at the moving portal's $(x, y)$ neighbourhood accelerates both by
+     nearly the same $\Delta \mathbf{r}$, causing `simUnguided` (player bodies removed) to
+     shift both back equally and false-pass. Place player lens bodies near the launch ramp
+     (angular lever arm) and route moving portals from outside the player bodies' local
+     $1/r^2$ field.
+  3. *Co-moving frame velocity on orbital injection*: When an exit portal orbits a moving,
+     gravity-accelerated anchor body, advance its orbital angle around the anchor's
+     instantaneous position and add the anchor's velocity ($\mathbf{v}_{\text{exit}} =
+     \mathbf{v}_{\text{anchor}} + \mathbf{v}_{\text{tangential}}$) on exit so circular orbit
+     injection remains Galilean-invariant.
 - "The next crawl/import will fix it" is **not** a migration: records that are no longer
   fetched will never be corrected, and the user sees the wrong state meanwhile.
 - Take a backup before a migration or destructive rebuild.
