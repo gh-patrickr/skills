@@ -38,6 +38,7 @@ Do not vendor skills into projects; symlink only if a project truly must pin one
 | [`apple-watch-app-development`](apple-watch-app-development/SKILL.md) | Independent and companion watchOS apps, complications, Digital Crown, haptics, and watch simulator verification. |
 | [`android-headless-playthrough-recording`](android-headless-playthrough-recording/SKILL.md) | Headless OpenGL ES 3.0 + Robolectric Canvas video recording in KVM-less cloud VMs, proxy TLS fixes, and physics-driven audio sonification. |
 | [`adb-wifi-debugging`](adb-wifi-debugging/SKILL.md) | Connect, pin ports, install APKs, capture screenshots, inject input, and profile frame-time/memory over Wi-Fi ADB. |
+| [`home-assistant-voice`](home-assistant-voice/SKILL.md) | Home Assistant `2026.x` registry alignment, outbound capability-token STT/Conversation workers, `RED`-tier voice safety gates, and compact local LLM guardrails. |
 | [`webgame-development`](webgame-development/SKILL.md) | Deterministic TypeScript + Vite + Canvas 2D starter, seeded test bridge, Playwright E2E/visual/a11y, headless bots, and FPS budgets. |
 | [`game-requirement`](game-requirement/SKILL.md) | Turn German-language game ideas from kids into testable English specs, kid-readable German mirrors, and open-question lists. |
 
