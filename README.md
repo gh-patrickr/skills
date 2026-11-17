@@ -48,6 +48,7 @@ Do not vendor skills into projects; symlink only if a project truly must pin one
 | --- | --- |
 | [`polish-property-scraping`](polish-property-scraping/SKILL.md) | Two-stage decoupled scraping, stealth browser patterns, and anonymized fixture testing for Polish real estate portals. |
 | [`real-estate-data-pipeline`](real-estate-data-pipeline/SKILL.md) | Hybrid raw-lake + SQL/JSONB lineage, cross-portal deduplication, multi-anchor commute geo-filtering, and pipeline testing. |
+| [`voice-satellite-corpus`](voice-satellite-corpus/SKILL.md) | Inspect Home Assistant via `ha-mcp`, audit Assist pipelines for local-only privacy, and capture unclipped single- or multi-satellite voice test corpora. |
 | [`consulting-deck`](consulting-deck/SKILL.md) | Build board-grade `.pptx` decks from compact YAML specs with measured text fitting, native charts/tables, and visual QA. |
 
 ## How discovery works

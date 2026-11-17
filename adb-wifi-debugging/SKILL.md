@@ -133,3 +133,16 @@ If another app is in the foreground (e.g. active media playback in another user 
 - A device reboot resets `tcpip 5555`. Go back to step 1.2.
 - macOS has no `timeout` command. Use background tasks or `perl -e 'alarm N; exec @ARGV' cmd`.
 - Fire OS has no Google Play services. Don't rely on them in apps.
+
+## 9. Sideloaded Always-On Audio & Kiosk Apps (Fire OS / Android 11+)
+
+- **Fire OS `RECORD_AUDIO` revocation & launcher lock:** Fire OS revokes `RECORD_AUDIO` from sideloaded (non-Amazon-Appstore) APKs on reboot or Wi-Fi drops, and blocks replacing `com.amazon.firelauncher` as the default Home app. Standard kiosk/satellite pattern: pair a narrow `AccessibilityService` (to re-foreground the app and accept own-app mic/update prompts) with `appops` and keyguard suppression:
+  ```bash
+  adb -s "$S" shell appops set PKG REQUEST_INSTALL_PACKAGES allow
+  adb -s "$S" shell settings put secure enabled_accessibility_services PKG/PKG.HomeGuard
+  adb -s "$S" shell settings put secure accessibility_enabled 1
+  adb -s "$S" shell locksettings set-disabled true
+  ```
+  *Gotcha:* `am force-stop PKG` clears its `enabled_accessibility_services` entry — re-run both `settings put secure` lines after force-stopping.
+- **Android 11+ (API 30+) background microphone block:** A `ForegroundService` started from `RECEIVE_BOOT_COMPLETED` cannot capture audio until an `Activity` has entered the foreground once and promoted the service with `FOREGROUND_SERVICE_TYPE_MICROPHONE`. Check `rec.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING` plus a read-stall watchdog (`~3 s`) rather than blocking forever on `AudioRecord.read()`.
+- **Bundled Go / native child daemons inside APKs:** Plain `GOOS=linux` Go binaries crash under Android's seccomp filter (`pidfd_open` probe). Cross-compile with `GOOS=android` + Android NDK `clang`, package as `lib/<abi>/lib<name>.so` so Android extracts the binary executable, and verify `LocalSocket.getPeerCredentials().getUid() == Process.myUid()` on abstract `LocalServerSocket` IPC.
