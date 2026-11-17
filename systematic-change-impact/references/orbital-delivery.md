@@ -39,6 +39,9 @@ Reference implementation of `systematic-change-impact` for **Orbital Delivery** 
    - `previewTicksFor` covers `maxSimulationTicks` so full trajectory hit/miss and closest-approach rendezvous state are visible before `START`.
    - Keep camera center and zoom (`pxPerUnit`) unchanged when transitioning from `PLANNING` into `RUNNING` (`startSimulation` / `stepDisplayFrame`).
    - Explicit `RESET` (`clearPlacements = true`) clears player-placed bodies and resets `budgetSpent` to `0`; tapping the world after a run (`clearPlacements = false`) rewinds to $t = 0$ while preserving placements for adjustment.
+8. **Static-mode sanctity, predictive intercept parity & goal immunity**:
+   - Clamp target and wormhole velocities/accelerations to zero whenever `motionStrategy == STATIC` so introductory static missions never drift off their $t = 0$ markers after `START`.
+   - Whenever targets or portals move in dynamic modes, render their synchronized orbital path and closest-approach intercept marker during `PLANNING`, and anchor targets to primary celestial bodies (or exclude player-placed micro-masses from target acceleration) so steering planets never yank `ZIEL` away from the shot.
 
 ## Verification gate recipe
 

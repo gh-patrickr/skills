@@ -141,6 +141,17 @@ When in doubt, treat it as systematic. Say so explicitly in the final answer
   multi-object solutions, active-playfield hazards, non-zero dynamic displacement, true
   orbital mechanics ($\Delta\theta$ swept + tangential dominance $v_t \ge 0.72\,v_r$ rather
   than simple ring crossing), and per-tab viewport coordinate bounds (`(i - 1) % pageSize`).
+- **Enforce human-planning observability & control decoupling ("Solver-Green ≠ Human-Playable"):**
+  An omniscient solver knows future tick positions $\vec{p}(t)$ and continuous parameters, so
+  100% of regenerated items can pass automated bot playthroughs while breaking human planning.
+  Assert three invariants whenever simulation or generator rules change: (1) **mode/tier
+  sanctity** — gate dynamic drift on the item's declared mode (`motionStrategy != STATIC`) so
+  introductory/static tiers stay stationary; (2) **predictive parity** — never make a target,
+  portal, or hazard move unless the planning UI renders its synchronized trajectory or
+  closest-approach intercept marker alongside the player's preview; and (3) **goal immunity &
+  default-spawn ergonomics** — player-placed effectors must steer the player's trajectory
+  rather than pulling unanchored goal zones away (3-body self-sabotage), and early-tier
+  solutions should remain reachable from the UI's default spawn values without micro-tuning.
 - **Slice flags for inner-loop tuning vs. full-corpus gate:** When full-corpus generation is
   expensive (e.g. solver-verified levels, Monte Carlo checks, or embeddings taking minutes),
   add a `--only` / `--slice` / `--levels` flag to the generator CLI for fast inner-loop
