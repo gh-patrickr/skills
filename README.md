@@ -19,6 +19,7 @@ Do not vendor skills into projects; symlink only if a project truly must pin one
 | [`github-actions-ci`](github-actions-ci/SKILL.md) | Check GitHub Actions runs at start/end of work, inspect failing logs, fix locally, push, and wait for green CI. |
 | [`okf-architecture-maintenance`](okf-architecture-maintenance/SKILL.md) | Keep `ARCHITECTURE.md` and `index.md` synced in repositories using Open Knowledge Format (OKF v0.1). |
 | [`runtime-health-verification`](runtime-health-verification/SKILL.md) | Probe live services/dev servers after changes, restart when stale, and verify runtime health instead of trusting unit tests alone. |
+| [`scheduled-sync-and-deploy`](scheduled-sync-and-deploy/SKILL.md) | Schedule deterministic OS pollers (`launchd`/`systemd`/`cron`) instead of LLM timer loops, build from isolated git worktrees, verify live `ETag` state, and upload under narrow cloud IAM without privilege escalation. |
 | [`systematic-change-impact`](systematic-change-impact/SKILL.md) | Measure blast radius on snapshots and reprocess affected populations systematically when changing stored/derived state. |
 
 ### Migrations & toolchain optimization
