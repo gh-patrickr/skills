@@ -160,6 +160,8 @@ Concrete stores, commands and worked examples for specific projects:
 
 - DreamHome Warsaw — [`references/dreamhome-warsaw.md`](references/dreamhome-warsaw.md)
   (DuckDB catalogue, derived tables, job paths, two measured dedupe rebuilds).
+- Orbital Delivery (`ag_sternendenker`) — [`references/orbital-delivery.md`](references/orbital-delivery.md)
+  (18 solver-verified Solar System campaign JSONs, back-rotated orbiting gravity assists, lateral aphelion detuning, downstream 3★ buoy divergence, and headless Mesa EGL/GLES3 + stereo audio playthrough recording).
 
 When you onboard another stateful project, add `references/<project>.md` with its stores,
 writer, protected data, migration command and measurement recipe — and keep this file
