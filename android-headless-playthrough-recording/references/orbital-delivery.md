@@ -1,6 +1,6 @@
 # Orbital Delivery — Playthrough Recording & Audio Reference
 
-Project root: `/home/antigravity/gh-patrickr/ag_sternendenker`
+Project root: `<workspace>/ag_sternendenker`
 
 ## Key Files
 
@@ -20,8 +20,3 @@ Project root: `/home/antigravity/gh-patrickr/ag_sternendenker`
 # Run all verification gates (core physics, 100-level campaign audit, unit/audio/UI tests, Android lint):
 ./gradlew :core-engine:test :cli-generator:test :android-app:testDebugUnitTest :android-app:lintDebug --no-daemon
 ```
-
-## Google Drive Targets
-
-- **Folder (`Orbital Delivery Playthroughs`)**: `1l5zBoZZr_jDA6mY76AIfH2NZdW44ux_d` (`https://drive.google.com/drive/folders/1l5zBoZZr_jDA6mY76AIfH2NZdW44ux_d`)
-- **Playthrough Video (`orbital-playthrough-L1_2_13.mp4`)**: `1dCdDixg75EDQ-kekHt-lP6cTWuOxHRwN` (`https://drive.google.com/file/d/1dCdDixg75EDQ-kekHt-lP6cTWuOxHRwN/view`)
