@@ -17,16 +17,18 @@ A change is done only when all of these are true:
    numbers that matter (test counts, coverage, bundle KB, FPS).
 3. No test was weakened, skipped or made time-dependent to get there. If a visual
    baseline changed on purpose, you ran `node tools/wg.mjs verify --update=all` and said so.
+4. Servers: you test and iterate on **your own dev server, on its own port** — never on
+   the shared main server. Leave the main server running while you work. Only **after**
+   the change works and `verify` is green do you stop/restart the main server **once,
+   briefly**, confirm it serves the new code and is healthy, then report done (§2.1).
 
 A green build is **not** evidence. A screenshot someone eyeballed is **not** evidence.
 Only the verification run is.
 
 Never: open a browser and click manually to "check it works", ask the human to test,
 add `waitForTimeout` to fix a flaky test, or put gameplay logic in a React/Vue component.
-
-Servers are per thread, never shared: give each thread its own dev server on its own
-free port, run its tests against its own preview server, and restart the **main**
-server at most once — when the work is finished (§2.1).
+Never kill, stop or restart the shared main server just to pick up a code change — start
+your own server on your own port instead.
 
 ## 0. Decide the shape (30 seconds, no questions)
 
@@ -98,10 +100,16 @@ Rules:
    its own preview. A busy 5173/4173 is informational in `doctor`, not a failure.
 3. `dev --detach --thread` starts at `devPort + 1`, so a thread never takes the main
    port; `--port N` stays strict and errors instead of killing the owner.
-4. The shared main server is for humans only (`.wg/dev.json`, port 5173). Restart it
-   **once**, after the work is done, `verify` is green, and `main` is pushed to
-   `origin/main`: `node tools/wg.mjs dev:restart`. Never leave the user on a thread
-   port (`5174+`) or an unmerged side branch.
+4. **Iterate on a separate server, restart the main one only when verified.** Start
+   your own dev server on its own free port (`dev --detach --thread`) and use it for
+   every manual check and every test until the change actually works. Leave the shared
+   main server (`.wg/dev.json`, port 5173) and the human using it alone — do not kill,
+   stop or restart it to "make sure the new code loads". Only once the change works,
+   full `verify` is green, and `main` is pushed to `origin/main`: stop/restart the main
+   server **once, briefly** (`node tools/wg.mjs dev:restart`), wait for the health probe
+   to pass (or the app URL to answer), confirm it serves the new code, then report done.
+   Never leave the user on a thread port (`5174+`) or an unmerged side branch, and never
+   restart it mid-run or before verification.
 5. Every dev and preview server binds `0.0.0.0` (all interfaces, so phones/tablets on
    the LAN and remote preview proxies can connect) **unless** `--local` or
    `--localhost` explicitly restricts binding to `127.0.0.1`.
