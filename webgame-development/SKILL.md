@@ -61,13 +61,17 @@ environment is missing; the output ends with the exact command that fixes it.
 ## 2. The loop that stays fast
 
 ```bash
-node tools/wg.mjs verify --fast     # types + lint + unit + e2e smoke  (~20 s)
-node tools/wg.mjs verify            # everything incl. bots + perf     (~40 s)
-node tools/wg.mjs watch             # lint + unit on every save
+npx vitest run tests/unit/game.test.ts                                    # single unit spec (~1 s)
+npx playwright test -c tools/playwright.config.ts tools/e2e/assets.spec.ts # single e2e spec  (~5 s)
+node tools/wg.mjs verify --fast                                           # types + lint + unit + e2e smoke (~20 s)
+node tools/wg.mjs verify                                                  # final full evidence gate (once at end)
 ```
 
-Prefer `watch` in one background slot and `verify --fast` at milestones. Full
-`verify` at the end of every prompt. Each run gets its own `artifacts/<run>/`.
+Prefer targeted single-file runs while iterating, `verify --fast` at milestones, and
+full `verify` **once** at the end of every prompt. **Never use full `wg verify` as an
+inner edit-debug loop:** on software-WebGL 2-vCPU runners (`SwiftShader` / `llvmpipe`),
+running 40+ WebGL Playwright specs takes several minutes per run, whereas running the
+affected spec directly takes seconds. Each `verify` run gets its own `artifacts/<run>/`.
 
 ### 2.1 One server per thread — never restart a shared one
 
@@ -95,11 +99,15 @@ Rules:
 3. `dev --detach --thread` starts at `devPort + 1`, so a thread never takes the main
    port; `--port N` stays strict and errors instead of killing the owner.
 4. The shared main server is for humans only (`.wg/dev.json`, port 5173). Restart it
-   **once**, after the work is done and `verify` is green:
-   `node tools/wg.mjs dev:restart`. Never in the middle of a test run.
-5. Visual baselines are the one genuinely shared file set: `visual:update` takes a
+   **once**, after the work is done, `verify` is green, and `main` is pushed to
+   `origin/main`: `node tools/wg.mjs dev:restart`. Never leave the user on a thread
+   port (`5174+`) or an unmerged side branch.
+5. Every dev and preview server binds `0.0.0.0` (all interfaces, so phones/tablets on
+   the LAN and remote preview proxies can connect) **unless** `--local` or
+   `--localhost` explicitly restricts binding to `127.0.0.1`.
+6. Visual baselines are the one genuinely shared file set: `visual:update` takes a
    lock. Run it in one thread at a time and say so in the summary.
-6. When two threads really must verify at the same time, give each a distinct
+7. When two threads really must verify at the same time, give each a distinct
    `WG_THREAD`; ports, state files, build dirs and Playwright artifacts then stay
    separate even though the checkout is shared.
 
@@ -122,8 +130,9 @@ Bridge surface (see `src/bridge.ts`): `snapshot()`, `step(frames)`, `start(seed)
 `restart(seed)`, `pause()`, `resume()`, `endRun()`, `setInput(patch)`, `clearInput()`,
 `autoplay(frames)`, `events()`, `errors()`, `fps()`, `setReducedMotion(bool)`.
 
-Use `?live=1` only for tests about the real animation loop (FPS, visibility pause).
-Everything else steps the simulation.
+Use `?live=1` for tests about the real `requestAnimationFrame` loop (FPS, visibility
+pause, and verifying that new 3D models/shaders survive adaptive quality scaling in
+real-time play). Everything else steps the simulation.
 
 ## 4. Keep the core pure
 
@@ -147,6 +156,8 @@ Adapters own the edges: `src/loop.ts` (clock/rAF), `src/input.ts`, `src/render/`
 - **Frozen-clock interactive feel & visual playtesting:** Fast-forward `step(N)` checks determinism, *not* pacing, shot-budget feel, HUD/toast/warning-banner occlusion, or down-road label overlap. When tuning levels or UI/3D visuals, play in real-time 60 Hz bursts paused via a virtual `performance.now()` hook (`window.__SIM_FROZEN__`) at `deviceScaleFactor: 2` and inspect captured frames multimodally (see `references/testing.md`).
 - **3-tier capability-curve calibration & obstacle-gated modules:** Compose stages from reusable encounter modules that tie high-value bonuses behind obstacles or shot-budget trade-offs (destructible blockers, shoot-to-unlock/rush gates vs. opposite-lane waves), and calibrate every stage so `RandomBot` fails, an honest continuous-firing `HumanBaselineBot` clears in a tight `1★` survival band (e.g. `8%–22%` HP), and `OptimalBot` clears at `2★–3★` (see `references/testing.md`).
 - **3D `InstancedMesh` color/depth & projected-label traps:** Avoid multiplying saturated `.glb` `vertexColors` by conflicting `instanceColor` tints, disable `depthWrite` + Y-stagger coplanar shockwave rings, and run 2D AABB repulsion on projected DOM world labels (see `references/engines.md`).
+- **Live `?live=1` 3D hero-model guarantee, quality hysteresis & deterministic HUD timers:** Manual `window.__WG__.step(n)` skips `requestAnimationFrame` frame-time reporting and software-WebGL defaults, hiding bugs that replace 3D models in real play. Always test new `.glb` models in `?live=1` immediately; keep human player hero models active across all quality tiers (`!lowDetail || playerSlot !== null`); feed adaptive quality controllers only during active gameplay after a post-start shader-warmup window using a multi-frame rolling median (never a single-frame `deltaMs` cliff); and advance HUD toasts/flashes from simulation `dtMs` (`ui.tick(dtMs)`) instead of wall-clock `setTimeout` so visual baselines never flake.
+- **Vite preview loopback stability (`keepAliveTimeout` + `identity` encoding + `loadWithRetry`):** Node's 5 s default `keepAliveTimeout` and Vite preview's `@polka/compression` chunked gzip on loopback can abort 1 in ~40 `.glb`/`.webp`/`.js` fetches (`net::ERR_ABORTED`) across sequential Playwright specs. Set `httpServer.keepAliveTimeout = 65_000` and `req.headers['accept-encoding'] = 'identity'` in `configurePreviewServer` (`dev-health.ts`) and wrap `.glb`/texture fetches in a short retry helper (`loadWithRetry`).
 
 ## 5. Automations this skill installs
 
@@ -154,8 +165,8 @@ Adapters own the edges: `src/loop.ts` (clock/rAF), `src/input.ts`, `src/render/`
 | --- | --- |
 | `wg verify` | doctor → lint → unit+coverage → build e2e → build prod → gzip budget → Playwright (UI, visual, a11y) → bots → FPS |
 | `wg verify --fast` | the same minus bots/perf, e2e limited to `[smoke]` |
-| `wg dev --detach` | background **main** Vite server; URL + pid in `.wg/dev.json` |
-| `wg dev --detach --thread` | per-thread server on its own free port; state in `.wg/threads/<id>.json` |
+| `wg dev --detach` | background **main** Vite server on `0.0.0.0` (or `127.0.0.1` with `--local` / `--localhost`); URL + pid + host in `.wg/dev.json` |
+| `wg dev --detach --thread` | per-thread server on its own free port (`0.0.0.0` by default); state in `.wg/threads/<id>.json` |
 | `wg dev:status [--all]`, `dev:stop --thread`, `dev:restart` | inspect, stop or restart exactly one server; `--all` never touches the main server |
 | `wg playtest` | 4 bots × 60 s of pure-core simulation in <1 s; fails on NaN, stall, zero progress |
 | `wg perf` | 240 real frames in Chrome; median FPS floor + long-frame ratio |

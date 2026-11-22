@@ -248,6 +248,14 @@ git status -sb               # verify branch is synced with origin/<branch> (no 
 
 - Always push when a remote is configured unless the user explicitly asked to keep the
   commit local.
+- **Fetch on every turn & integrate `origin/main` instead of stranding work on a side branch:**
+  Run `git fetch origin` at the start of every turn and before pushing so local `main` never
+  drifts silently across multi-turn sessions. When `git push origin main` is rejected with
+  `(fetch first)` because a parallel session pushed additive commits to `origin/main`, **never
+  park verified work on an unmerged side branch** — fetch, merge/integrate `origin/main`,
+  resolve conflicts cleanly, re-run verification, push `origin/main`, and delete any temporary
+  branch. Downstream host supervisors, auto-pullers, and live servers track `origin/main`, so
+  leaving changes on a side branch leaves the live application stale.
 - Never force-push (`git push --force`) to `main`/`master` unless explicitly instructed.
 - **Shared global checkouts (e.g. `~/.dsh/skills`) across concurrent sessions:** Never run `git checkout -b` directly inside a working tree shared by sibling agent sessions (which switches `HEAD` underneath them). Create a temporary `git worktree add <scratch>/wt -b <branch> origin/main`, commit/push from that worktree, fast-forward `origin/main`, and remove the worktree when finished.
 - **Remote tag conflicts (`would clobber existing tag`) & milestone binaries:** If `git fetch` or `git push` rejects a tag moved on `origin` (e.g. by CI release automation), compare `git ls-remote --tags origin <tag>` with local `git rev-parse <tag>`, sync remote tags cleanly via `git fetch origin --tags --force`, and push new release tags explicitly (`git push origin refs/tags/<new-tag>`) instead of `git push --tags`. When asked to preserve named release binaries alongside tags, save version-stamped filenames (e.g. `releases/<app>-<tag>-release.apk`) so subsequent builds never overwrite earlier milestones.
@@ -289,6 +297,6 @@ State:
 - Mixing another session’s changes with yours.
 - Committing while tests, privacy/secret checks, or the runtime probe are red (or bypassing hooks with `--no-verify`).
 - Calling a multi-feature checkpoint commit a feature commit.
-- Committing locally and forgetting to `git push` when a remote is configured.
+- Committing locally across multiple prompts without `git push`, or sidestepping a `(fetch first)` push rejection onto an unmerged side branch instead of integrating `origin/main` and pushing `main`.
 - Leaving the tree dirty without telling the user.
 

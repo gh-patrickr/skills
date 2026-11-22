@@ -21,10 +21,13 @@ function stateFile(root: string, kind: 'dev' | 'preview'): string {
 async function writeState(root: string, server: ViteDevServer, kind: 'dev' | 'preview'): Promise<void> {
   const address = server.httpServer?.address();
   if (address === null || typeof address === 'string') return;
-  const port = (address as AddressInfo).port;
+  const info = address as AddressInfo;
+  const port = info.port;
+  const host = info.address === '::' ? '0.0.0.0' : info.address;
   const state = {
     kind,
     thread: process.env.WG_THREAD || undefined,
+    host,
     port,
     url: `http://127.0.0.1:${port}/`,
     endpoint: `http://127.0.0.1:${port}/__wg/health`,
@@ -78,6 +81,10 @@ export function devHealth(): Plugin {
         if (!req.url?.includes('.')) res.setHeader('Cache-Control', 'no-store');
         next();
       });
+      if (server.httpServer && 'keepAliveTimeout' in server.httpServer) {
+        server.httpServer.keepAliveTimeout = 65_000;
+        server.httpServer.headersTimeout = 66_000;
+      }
       server.httpServer?.once('listening', () => {
         void writeState(server.config.root, server, 'dev');
       });
@@ -86,6 +93,14 @@ export function devHealth(): Plugin {
       });
     },
     configurePreviewServer(server) {
+      if (server.httpServer && 'keepAliveTimeout' in server.httpServer) {
+        server.httpServer.keepAliveTimeout = 65_000;
+        server.httpServer.headersTimeout = 66_000;
+      }
+      server.middlewares.use((req, _res, next) => {
+        req.headers['accept-encoding'] = 'identity';
+        next();
+      });
       server.middlewares.use('/__wg/health', (_req, res) => {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify({ ok: true, kind: 'preview', root: server.config.root }));

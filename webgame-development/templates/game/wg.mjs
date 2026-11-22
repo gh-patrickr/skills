@@ -15,6 +15,7 @@
 import { spawn } from 'node:child_process';
 import { closeSync, existsSync, openSync } from 'node:fs';
 import { chmod, cp, mkdir, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { networkInterfaces } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -39,7 +40,39 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = JSON.parse(await readFile(path.join(ROOT, '.wg.json'), 'utf8'));
-const DEV_HOST = typeof CONFIG.devHost === 'string' && CONFIG.devHost !== '' ? CONFIG.devHost : '127.0.0.1';
+/** Servers listen on every interface (0.0.0.0) unless --local or --localhost is passed. */
+const DEFAULT_BIND_HOST = '0.0.0.0';
+const LOOPBACK_HOST = '127.0.0.1';
+
+function isLocalOnly(flags = FLAGS) {
+  return (
+    flags.local === true ||
+    flags.local === 'true' ||
+    flags.localhost === true ||
+    flags.localhost === 'true'
+  );
+}
+
+/**
+ * Bind address for dev and preview servers.
+ *
+ * Always `0.0.0.0` unless `--local` or `--localhost` explicitly restricts the
+ * listener to `127.0.0.1`.
+ */
+function bindHost(flags = FLAGS) {
+  return isLocalOnly(flags) ? LOOPBACK_HOST : DEFAULT_BIND_HOST;
+}
+
+/** First non-internal IPv4 address, for the "open this on your phone" URL. */
+function lanUrl(port, host) {
+  if (host !== DEFAULT_BIND_HOST) return null;
+  for (const addresses of Object.values(networkInterfaces())) {
+    for (const address of addresses ?? []) {
+      if (address.family === 'IPv4' && !address.internal) return `http://${address.address}:${port}/`;
+    }
+  }
+  return null;
+}
 const DEV_PORT = num(CONFIG.devPort, 5173);
 const PREVIEW_PORT = num(CONFIG.previewPort, 4173);
 /** Label of this thread; empty means "the one shared main server". */
@@ -50,16 +83,21 @@ const ARGV = process.argv.slice(2);
 const COMMAND = ARGV[0] ?? 'help';
 const FLAGS = parseFlags(ARGV.slice(1));
 
+function normalizeFlagToken(raw) {
+  if (raw.startsWith('—') || raw.startsWith('–')) return `--${raw.slice(1)}`;
+  return raw;
+}
+
 function parseFlags(argv) {
   const flags = { _: [] };
   for (let index = 0; index < argv.length; index++) {
-    const arg = argv[index];
+    const arg = normalizeFlagToken(argv[index]);
     if (!arg.startsWith('--')) {
       flags._.push(arg);
       continue;
     }
     const [key, inline] = arg.slice(2).split('=');
-    const next = argv[index + 1];
+    const next = argv[index + 1] !== undefined ? normalizeFlagToken(argv[index + 1]) : undefined;
     if (inline !== undefined) {
       flags[key] = inline;
     } else if (next !== undefined && !next.startsWith('-')) {
@@ -105,10 +143,26 @@ function devTarget() {
   return slug(String(FLAGS.thread)) || `t${process.pid}`;
 }
 
-/** Drop state files whose server is gone (killed without a clean shutdown). */
+function pidAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM means the process exists but belongs to someone else.
+    return error?.code === 'EPERM';
+  }
+}
+
+/**
+ * Drop state files whose server is gone (killed without a clean shutdown).
+ * A process that still exists is never pruned, even if its health probe is
+ * slow — deleting a live server's state is how threads lose their server.
+ */
 async function pruneDeadServers() {
   for (const state of await listServerStates(ROOT)) {
-    if ((await probeServer(state.url, 600)) !== null) continue;
+    if (pidAlive(Number(state.pid))) continue;
+    if ((await probeServer(state.url, 2_000)) !== null) continue;
     for (const stateFile of state.stateFiles) {
       const insideStateDir = stateFile.split(path.sep).join('/').startsWith('.wg/');
       if (insideStateDir) await removeFile(path.join(ROOT, stateFile));
@@ -526,13 +580,25 @@ async function dev() {
   const target = devTarget();
   const stateFile = devStateFile(target);
   const detach = FLAGS.detach === true;
+  const host = bindHost();
 
   await pruneDeadServers();
   const known = await aliveState(stateFile);
   if (known?.alive && FLAGS.restart !== true) {
+    const knownPort = known.port ?? new URL(known.url).port;
+    const knownHost = known.host ?? host;
     console.log(
       JSON.stringify(
-        { ok: true, reused: true, thread: target, url: known.url, pid: known.pid, stateFile: path.relative(ROOT, stateFile) },
+        {
+          ok: true,
+          reused: true,
+          thread: target,
+          host: knownHost,
+          url: known.url,
+          lanUrl: lanUrl(knownPort, knownHost),
+          pid: known.pid,
+          stateFile: path.relative(ROOT, stateFile),
+        },
         null,
         2,
       ),
@@ -543,15 +609,15 @@ async function dev() {
   const explicitPort = num(FLAGS.port, 0);
   // A thread server never lands on the main port: it scans above it.
   const firstPort = target === 'main' ? DEV_PORT : DEV_PORT + 1;
-  let port = explicitPort > 0 ? explicitPort : await pickPort(firstPort, { host: DEV_HOST });
+  let port = explicitPort > 0 ? explicitPort : await pickPort(firstPort, { host });
 
-  if (!(await isPortFree(port, DEV_HOST))) {
+  if (!(await isPortFree(port, host))) {
     // A live server on our own port is reused, never killed.
     const health = await probeServer(`http://127.0.0.1:${port}/`);
     if (health !== null && health.root === ROOT && explicitPort === 0) {
       console.log(
         JSON.stringify(
-          { ok: true, reused: true, thread: target, url: `http://${DEV_HOST}:${port}/`, note: 'server already running' },
+          { ok: true, reused: true, thread: target, host, url: `http://127.0.0.1:${port}/`, lanUrl: lanUrl(port, host), note: 'server already running' },
           null,
           2,
         ),
@@ -562,13 +628,16 @@ async function dev() {
       console.error(`port ${port} is already in use — pass --port N or start an isolated server with --thread`);
       return 1;
     }
-    port = await pickPort(port + 1, { host: DEV_HOST });
+    port = await pickPort(port + 1, { host });
     console.log(C.dim(`port ${port - 1} is busy — taking ${port} instead`));
   }
 
-  const env = { ...process.env, ...(target === 'main' ? {} : { WG_STATE_FILE: path.relative(ROOT, stateFile) }) };
-  const args = ['--port', String(port), '--strictPort', '--host', DEV_HOST];
-  const url = `http://${DEV_HOST}:${port}/`;
+  const env = {
+    ...process.env,
+    ...(target === 'main' ? {} : { WG_STATE_FILE: path.relative(ROOT, stateFile), WG_THREAD: target }),
+  };
+  const args = ['--port', String(port), '--strictPort', '--host', host];
+  const url = `http://${host}:${port}/`;
 
   if (detach) {
     const logFile = devLogFile(target);
@@ -590,6 +659,7 @@ async function dev() {
       { kind: 'dev', thread: target, port, url: `http://127.0.0.1:${port}/`, pid: child.pid, startedAt: new Date().toISOString() };
     if (state.thread === undefined) state.thread = target;
     if (state.port === undefined) state.port = port;
+    state.host = host;
     await writeJson(stateFile, state);
     console.log(
       JSON.stringify(
@@ -597,7 +667,9 @@ async function dev() {
           ok: true,
           reused: false,
           thread: target,
-          url: state.url,
+          host,
+          url: `http://127.0.0.1:${port}/`,
+          lanUrl: lanUrl(port, host),
           port,
           pid: state.pid,
           stateFile: path.relative(ROOT, stateFile),
@@ -610,12 +682,15 @@ async function dev() {
     return 0;
   }
 
-  console.log(`${C.dim(`starting dev server on http://${DEV_HOST}:${port}/`)}`);
+  console.log(`${C.dim(`starting dev server on http://${host}:${port}/${host === DEFAULT_BIND_HOST ? ' (all interfaces)' : ''}`)}`);
   const child = spawn(bin(ROOT, 'vite'), args, {
     cwd: ROOT,
     stdio: 'inherit',
     env,
   });
+  const forwardSignal = (signal) => child.kill(signal);
+  process.once('SIGINT', forwardSignal);
+  process.once('SIGTERM', forwardSignal);
   if (FLAGS.open) {
     await waitForHttp(`http://127.0.0.1:${port}/__wg/health`, 45_000).then(() => {
       const opener = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
@@ -623,7 +698,11 @@ async function dev() {
     });
   }
   return new Promise((resolve) => {
-    child.on('close', (code) => resolve(code ?? 0));
+    child.on('close', (code) => {
+      process.off('SIGINT', forwardSignal);
+      process.off('SIGTERM', forwardSignal);
+      resolve(code ?? 0);
+    });
   });
 }
 
@@ -636,6 +715,7 @@ async function devStatus() {
       servers.push({
         thread: state.thread ?? null,
         kind: state.kind ?? 'dev',
+        host: state.host ?? null,
         url: state.url,
         port: state.port ?? new URL(state.url).port,
         pid: state.pid,
@@ -660,9 +740,10 @@ async function devStatus() {
     );
     return 1;
   }
+  const activeHost = state.host ?? bindHost();
   console.log(
     JSON.stringify(
-      { ok: state.alive, running: state.alive, thread: target, url: state.url, pid: state.pid, port: state.port ?? new URL(state.url).port },
+      { ok: state.alive, running: state.alive, thread: target, host: activeHost, url: state.url, lanUrl: lanUrl(state.port ?? new URL(state.url).port, activeHost), pid: state.pid, port: state.port ?? new URL(state.url).port },
       null,
       2,
     ),
@@ -720,10 +801,11 @@ async function devRestart() {
 }
 
 async function preview() {
+  const host = bindHost();
   const explicitPort = num(FLAGS.port, 0);
-  const port = explicitPort > 0 ? explicitPort : await pickPort(PREVIEW_PORT);
-  const outDir = process.env.WG_OUT_DIR ?? buildDir(await previewMode());
+  const port = explicitPort > 0 ? explicitPort : await pickPort(PREVIEW_PORT, { host });
   const mode = await previewMode();
+  const outDir = process.env.WG_OUT_DIR ?? buildDir(mode);
   if (!(await exists(path.join(ROOT, outDir, 'index.html')))) {
     const result = await viteBuild(mode);
     if (!result.ok) {
@@ -731,12 +813,21 @@ async function preview() {
       return 1;
     }
   }
-  const child = spawn(bin(ROOT, 'vite'), ['preview', '--mode', mode, '--port', String(port), '--strictPort'], {
+  const child = spawn(bin(ROOT, 'vite'), ['preview', '--mode', mode, '--port', String(port), '--strictPort', '--host', host], {
     cwd: ROOT,
     stdio: 'inherit',
     env: { ...process.env, ...buildEnv(mode) },
   });
-  return new Promise((resolve) => child.on('close', (code) => resolve(code ?? 0)));
+  const forwardSignal = (signal) => child.kill(signal);
+  process.once('SIGINT', forwardSignal);
+  process.once('SIGTERM', forwardSignal);
+  return new Promise((resolve) =>
+    child.on('close', (code) => {
+      process.off('SIGINT', forwardSignal);
+      process.off('SIGTERM', forwardSignal);
+      resolve(code ?? 0);
+    }),
+  );
 }
 
 async function previewMode() {
@@ -858,13 +949,14 @@ function help() {
   verify                 full evidence run: doctor, lint, unit, build, e2e, bots, perf
   verify --fast          lint + unit + e2e smoke only
   verify --keep-going    run every step even after a failure
-  dev [--port N]         dev server (foreground); main server, keep it running
+  dev [--port N]         dev server (foreground); main server on 0.0.0.0
   dev --detach           background main dev server; URL + pid in .wg/dev.json
   dev --detach --thread  per-thread server on its own free port (never 5173)
+  dev --local|--localhost bind 127.0.0.1 only (default: 0.0.0.0, open on the LAN)
   dev:status [--all]     JSON status of one server / every known server
   dev:stop [--thread X]  stop that server, or --all thread servers (main stays)
   dev:restart [--thread] explicit restart — do it once, at the end of the work
-  preview [--port N]     serve the built game (builds on demand)
+  preview [--port N]     serve the built game on 0.0.0.0 (or 127.0.0.1 with --local|--localhost)
   playtest               headless bot simulation of the pure core
   perf                   FPS + long-frame budget in real Chrome
   assets                 validate and hash public/assets

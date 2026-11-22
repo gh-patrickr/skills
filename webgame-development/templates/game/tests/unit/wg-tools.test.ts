@@ -136,6 +136,94 @@ describe('wg parallel-thread contract', () => {
     if (mainRunning) expect(await readFile(MAIN_STATE, 'utf8').catch(() => null)).toBe(mainBefore);
   }, 30_000);
 
+  it('binds 0.0.0.0 always and restricts to 127.0.0.1 only with --local or --localhost', async () => {
+    const openThread = `unit-host-open-${process.pid}`;
+    const openState = await startThread(openThread);
+    expect(openState.host).toBe('0.0.0.0');
+
+    const stopOpen = await runWg(['dev:stop', '--thread', openThread]);
+    expect(stopOpen.code, stopOpen.stderr).toBe(0);
+
+    for (const [suffix, flag] of [
+      ['local', '--local'],
+      ['localhost', '--localhost'],
+      ['emdash', '—local'],
+    ] as const) {
+      const localThread = `unit-host-${suffix}-${process.pid}`;
+      startedThreads.push(localThread);
+      const local = await runWg(['dev', '--detach', '--thread', localThread, flag]);
+      expect(local.code, local.stderr).toBe(0);
+
+      const localState = parseJson(local.stdout);
+      expect(localState.host).toBe('127.0.0.1');
+      expect(localState.lanUrl).toBeNull();
+      expect(await healthy(String(localState.url))).toBe(true);
+
+      const stopLocal = await runWg(['dev:stop', '--thread', localThread]);
+      expect(stopLocal.code, stopLocal.stderr).toBe(0);
+    }
+  }, 90_000);
+
+  it('binds preview servers to 0.0.0.0 always unless --local or --localhost is passed', async () => {
+    const freePort = (): Promise<number> =>
+      new Promise((resolve, reject) => {
+        const probe = createServer();
+        probe.once('error', reject);
+        probe.listen(0, '0.0.0.0', () => {
+          const addr = probe.address();
+          const chosen = typeof addr === 'object' && addr !== null ? addr.port : 0;
+          probe.close(() => resolve(chosen));
+        });
+      });
+
+    const bootPreview = async (port: number, extraArgs: string[]): Promise<() => Promise<void>> => {
+      const child = spawn(
+        process.execPath,
+        [path.join(ROOT, 'tools', 'wg.mjs'), 'preview', '--port', String(port), ...extraArgs],
+        { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] },
+      );
+      const url = `http://127.0.0.1:${port}/`;
+      const mirrorPath = path.join(ROOT, '.wg', 'instances', `preview-${port}.json`);
+      const deadline = Date.now() + 45_000;
+      while (Date.now() < deadline) {
+        const hasMirror = (await readFile(mirrorPath, 'utf8').catch(() => null)) !== null;
+        if (hasMirror && (await healthy(url))) break;
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      expect(await healthy(url)).toBe(true);
+      return () =>
+        new Promise<void>((resolve) => {
+          child.once('close', () => resolve());
+          child.kill('SIGTERM');
+          setTimeout(() => child.kill('SIGKILL'), 2_000).unref();
+        });
+    };
+
+    const openPort = await freePort();
+    const stopOpen = await bootPreview(openPort, []);
+    try {
+      const state = JSON.parse(
+        await readFile(path.join(ROOT, '.wg', 'instances', `preview-${openPort}.json`), 'utf8'),
+      ) as { host?: string };
+      expect(state.host).toBe('0.0.0.0');
+    } finally {
+      await stopOpen();
+    }
+
+    for (const flag of ['--local', '--localhost'] as const) {
+      const localPort = await freePort();
+      const stopLocal = await bootPreview(localPort, [flag]);
+      try {
+        const state = JSON.parse(
+          await readFile(path.join(ROOT, '.wg', 'instances', `preview-${localPort}.json`), 'utf8'),
+        ) as { host?: string };
+        expect(state.host).toBe('127.0.0.1');
+      } finally {
+        await stopLocal();
+      }
+    }
+  }, 90_000);
+
   it('never puts two threads on the same port', async () => {
     const first = `unit-a-${process.pid}`;
     const second = `unit-b-${process.pid}`;

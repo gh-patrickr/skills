@@ -5,8 +5,12 @@ proves the game builds, plays, looks right and performs.
 
 ```bash
 npm install
-npm run dev        # main server, http://127.0.0.1:5173
+npm run dev        # main server on 0.0.0.0:5173 (reachable on the LAN)
 npm run verify     # full evidence run → artifacts/<run>/summary.md
+
+# loopback only (every server binds 0.0.0.0 unless --local or --localhost is given)
+node tools/wg.mjs dev --local
+node tools/wg.mjs dev --localhost
 
 # parallel agents: one server per thread, own free port, own state
 node tools/wg.mjs dev --detach --thread

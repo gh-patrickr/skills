@@ -37,13 +37,21 @@ export async function ensureBuild(root, mode = 'e2e', logFile) {
  * Boot `vite preview` for a built output and wait for the health probe.
  * Callers must always `stop()`; the wrapper is used by perf and shot tools.
  */
-export async function startPreview(root, { port = 4173, mode = 'e2e', logFile } = {}) {
-  await ensureBuild(root, mode);
-  const child = spawn(bin(root, 'vite'), ['preview', '--mode', mode, '--port', String(port), '--strictPort'], {
-    cwd: root,
-    env: { ...process.env, FORCE_COLOR: '0' },
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+export async function startPreview(
+  root,
+  { port = 4173, mode = 'e2e', local = false, localhost = false, logFile } = {},
+) {
+  const host = local || localhost ? '127.0.0.1' : '0.0.0.0';
+  await ensureBuild(root, mode, logFile);
+  const child = spawn(
+    bin(root, 'vite'),
+    ['preview', '--mode', mode, '--port', String(port), '--strictPort', '--host', host],
+    {
+      cwd: root,
+      env: { ...process.env, FORCE_COLOR: '0' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    },
+  );
 
   let stderr = '';
   child.stderr.on('data', (data) => {
@@ -60,6 +68,7 @@ export async function startPreview(root, { port = 4173, mode = 'e2e', logFile } 
 
   return {
     url,
+    host,
     port,
     stop() {
       child.kill('SIGTERM');

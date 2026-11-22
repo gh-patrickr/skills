@@ -9,6 +9,14 @@ import { devHealth } from './tools/plugins/dev-health.ts';
  */
 export default defineConfig(({ mode }) => {
   const e2e = mode === 'e2e';
+  const localOnly = process.argv.some(
+    (arg) =>
+      arg === '--local' ||
+      arg === '--localhost' ||
+      arg === '—local' ||
+      arg === '—localhost',
+  );
+  const host = localOnly ? '127.0.0.1' : '0.0.0.0';
   return {
     plugins: [gameBridge({ e2e }), assetManifest(), devHealth()],
     define: {
@@ -24,12 +32,13 @@ export default defineConfig(({ mode }) => {
       outDir: process.env.WG_OUT_DIR ?? (e2e ? 'dist-e2e' : 'dist'),
     },
     server: {
-      host: '127.0.0.1',
+      // Always bind 0.0.0.0 unless --local or --localhost explicitly opts into loopback.
+      host,
       port: Number(process.env.WG_PORT ?? 5173),
       strictPort: false,
     },
     preview: {
-      host: '127.0.0.1',
+      host,
       port: Number(process.env.WG_PREVIEW_PORT ?? 4173),
       strictPort: false,
     },

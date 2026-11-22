@@ -24,6 +24,12 @@ if it does not work, restart it with the current code and test it again.**
 2. Look for a running-service signal, in this order:
    - an existing probe: `scripts/runtime_health.py`, `scripts/runtime_health.sh`,
      `scripts/healthcheck.*`, `bin/health*`;
+   - repository service lifecycle scripts: `start.sh`, `restart.sh`, `launchd` plists, or
+     `systemd` units — when present, treat their declared `PORT` (e.g. `5173`), host bind
+     (`0.0.0.0` unless `--local`/`--localhost`), and `keep_running_server: true`
+     (`mode: "persistent"`) as authoritative; never point `.runtime-health.json` or
+     `scripts/runtime_health.py` at an ephemeral preview port (`4173`) or leave the user on a
+     temporary per-thread port (`5174`) when `start.sh` manages `5173`;
    - a declared run/probe script: `package.json` → `scripts.health`, `scripts.smoke`,
      `scripts.start`, `scripts.dev`; `Makefile` → `health`, `smoke`, `run`, `serve`;
      `docker-compose.yml` → `healthcheck`; `Procfile`; `justfile`;
@@ -80,15 +86,20 @@ Use the project's existing probe first. If the project runs a service but has no
 
 ## 5. Restart or start through a managed job
 
-- Use the project's documented lifecycle command (e.g. `npm run dev`, `make run`,
-  `uv run <app> serve`, `docker compose up`, `cargo run -- serve`). Prefer a clean
+- Use the project's documented lifecycle command (e.g. `./start.sh --foreground`, `npm run dev`,
+  `make run`, `uv run <app> serve`, `docker compose up`, `cargo run -- serve`). Prefer a clean
   stop-then-start so a stale process cannot keep the port.
 - **Never** `nohup`, `&`, `disown`, a detached terminal, or a second server on the same
   port. Launch the foreground command as your harness's managed background job (for example,
-  in DSH use the `bash` tool with `run_in_background: true`) and keep the job handle so you
-  can read the startup log and stop it.
-- Respect the project's network default: stay loopback-only unless the previous instance
-  deliberately served the LAN.
+  `IsDaemon: true` in `run_command`, or `run_in_background: true` in `bash`) and keep the job
+  handle so you can read the startup log and stop it.
+- **Remote cloud VM vs. user's host supervisor:** Starting a server inside a remote devbox
+  only serves the cloud Preview pane — it cannot reach or restart a supervisor running on the
+  user's own computer. Restoring the user's normal live state requires **both** merging and
+  pushing verified `main` to `origin/main` **and** restarting the persistent main port (e.g.
+  `0.0.0.0:5173`) once at the end of the turn.
+- Respect the project's network default (e.g. `0.0.0.0` unless `--local` or `--localhost`
+  explicitly requests `127.0.0.1`).
 - Starting a second instance is not a restart. Stop the old one first.
 
 ## 6. Wait for readiness, then probe again

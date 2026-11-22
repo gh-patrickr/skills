@@ -58,9 +58,16 @@ Rules:
 
 - **Never `waitForTimeout` to advance the game.** Use `step(frames)`. A fixed
   `waitForTimeout` is the #1 source of CI flakes.
+- **Never use full `wg verify` as an inner debugging loop.** Run the single touched unit
+  file (`npx vitest run tests/unit/<file>`) or Playwright spec
+  (`npx playwright test -c tools/playwright.config.ts tools/e2e/<spec>`) in seconds, and
+  reserve full `node tools/wg.mjs verify` for the single final gate.
 - Use real input for input tests (`keyboard.down`, `click`) and the bridge only to
   advance time.
-- Use `?live=1` exclusively for loop/FPS tests.
+- Use `?live=1` for loop/FPS tests **and** for an explicit live smoke test whenever adding
+  3D `.glb` models, custom shaders, or adaptive quality scaling (manual `step(frames)`
+  bypasses `requestAnimationFrame` delta reporting and can hide quality-cliff regressions
+  that swap out hero models in real play).
 - Assert user-visible state (`getByTestId`) *and* model state (`snapshot()`) — HUD
   drift is a real bug class.
 - Locators: roles and accessible names (`getByRole('button', { name: 'Start run' })`).
@@ -86,6 +93,9 @@ Policy:
 
 - Snapshot the **canvas** for gameplay (no HUD, no fonts if avoidable) and the
   **page** for menu/layout.
+- **Advance transient HUD toasts and flashes via simulation `dtMs` (`ui.tick(dtMs)`),
+  never wall-clock `window.setTimeout`:** stepped tests (`step(320)`) finish in
+  milliseconds while wall-clock timers remain visible and randomly corrupt baselines.
 - Always seed and step a fixed number of frames; never screenshot a live loop.
 - Keep `maxDiffPixelRatio` small (0.012 default). Raising it to hide a real diff is
   the visual equivalent of deleting a test.
@@ -183,10 +193,15 @@ in Vitest on `ubuntu-latest` 2-vCPU x64 runners):
 
 A flaky test is a bug. Fix the synchronisation, not the retry count:
 
-1. Replace wall-clock waits with `expect.poll` on bridge state.
+1. Replace wall-clock waits with `expect.poll` on bridge state (and replace `setTimeout`
+   HUD timers with simulation-stepped `dtMs` counters).
 2. Seed all randomness; freeze the scene for screenshots.
 3. Assert on stable values (tick, phase, score), not raw pixels of moving objects.
-4. Only then consider a retry — and only in CI, never to mask a local failure.
+4. Keep `httpServer.keepAliveTimeout = 65_000` and `req.headers['accept-encoding'] = 'identity'`
+   in `configurePreviewServer` (`dev-health.ts`) plus a short asset-fetch retry helper so
+   Node's 5 s keep-alive timeout and Vite preview's loopback chunked gzip never cause
+   `net::ERR_ABORTED` asset flakes across sequential Playwright tests.
+5. Only then consider a retry — and only in CI, never to mask a local failure.
 
 ## Parallel threads and shared servers
 
