@@ -19,3 +19,33 @@ jobs:
         run: python3 scripts/check_privacy.py --all
       - name: Run privacy scanner unit tests
         run: python3 -m unittest scripts/test_check_privacy.py
+      - name: Run solidcraft-model-viewer packer tests
+        run: python3 -m unittest discover -s solidcraft-model-viewer/scripts -p 'test_*.py'
+
+  solidcraft-viewer-browser:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: solidcraft-model-viewer/src
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install build and test dependencies
+        run: npm ci
+      - name: Rebuilt viewer must match the committed asset
+        run: |
+          npm run build
+          git diff --exit-code -- ../assets/solidcraft-viewer.html
+      - name: Install Chromium for playwright-core
+        run: npx playwright-core install --with-deps chromium
+      - name: End-to-end viewer checks (file://, http, CSP iframe, interactions)
+        run: node verify.mjs --shots shots
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: solidcraft-viewer-shots
+          path: solidcraft-model-viewer/src/shots
+          if-no-files-found: ignore

@@ -1,0 +1,16 @@
+{
+  "name": "solidcraft-model-viewer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds assets/solidcraft-viewer.html: a single-file, offline Three.js viewer for SolidCraft GLB/STL exports.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "verify": "node verify.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright-core": "^1.50.0",
+    "three": "0.187.0"
+  }
+}
