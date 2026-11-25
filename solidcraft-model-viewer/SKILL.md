@@ -10,13 +10,15 @@ a 3D model the user can turn, zoom and pan. three.js r187 is **inlined** (≈660
 server and no build step, and it renders inside Antigravity HTML artifacts, whose CSP blocks external scripts
 and `fetch()`.
 
-The only per-model change is the model itself, and [`scripts/sc_view.py`](scripts/sc_view.py) makes it:
+The only per-model change is the model itself, and [`scripts/sc_view.py`](scripts/sc_view.py) (in this skill's directory — see [`README.md`](README.md) for installation) makes it:
 
 ```bash
-V=~/.gemini/config/skills/solidcraft-model-viewer
-python3 $V/scripts/sc_view.py part.sc  -o part.html --title "Bracket v2"   # .sc/.step -> GLB via solidcraft-cli, embedded
-python3 $V/scripts/sc_view.py part.glb -o part.html                        # GLB/STL (glTF with embedded buffers) embedded
-python3 $V/scripts/sc_view.py part.glb -o site/part.html --link            # reference the GLB instead (needs http)
+# Set V to this skill's directory (the folder containing this SKILL.md), e.g.:
+# ~/.gemini/config/skills/solidcraft-model-viewer, ~/.claude/skills/solidcraft-model-viewer,
+# ~/.codex/skills/solidcraft-model-viewer, ~/.agents/skills/solidcraft-model-viewer, or .agents/skills/solidcraft-model-viewer
+python3 "$V/scripts/sc_view.py" part.sc  -o part.html --title "Bracket v2"   # .sc/.step -> GLB via solidcraft-cli, embedded
+python3 "$V/scripts/sc_view.py" part.glb -o part.html                        # GLB/STL (glTF with embedded buffers) embedded
+python3 "$V/scripts/sc_view.py" part.glb -o site/part.html --link            # reference the GLB instead (needs http)
 ```
 
 ## Why embedding is the default
@@ -43,12 +45,11 @@ page lives on a web server next to many large models.
    model in the project (`models/<name>/<name>.html`) and regenerate it whenever the model changes —
    a stale viewer is a stale deliverable.
 3. Show it to the user:
-   - **Antigravity, inline in chat:** copy the packed page into the conversation's artifact directory
-     (`cp part.html <artifact-dir>/part-viewer.html`; at ~800 KiB it is too large to write with `write_file`)
-     and put `<agent-embed src="file:///<artifact-dir>/part-viewer.html"></agent-embed>` in the reply.
-     Inside an iframe the viewer is a fixed 440 px tall (`--height` changes it; keep ≤ 450 for inline
-     chat) and follows the host's light/dark theme variables.
-   - **Antigravity side pane / browser:** link the file with a `file://` URL or run `open part.html`.
+   - **Antigravity, inline in chat:**
+     1. Copy the packed page into the conversation's artifact directory: `cp part.html <artifact-dir>/part-viewer.html` (at ~800 KiB it is too large to pass through `write_file`).
+     2. Register `ArtifactMetadata` (`UserFacing: true`, `RequestFeedback: false`, concise `Summary`) by running a tiny `edit_file` on that artifact file (for example replacing `<!--SC-CONFIG-BEGIN-->` with `<!--SC-CONFIG-BEGIN-->`, or updating the title) — shell `cp` alone skips artifact registration.
+     3. Put `<agent-embed src="file:///<artifact-dir>/part-viewer.html"></agent-embed>` in the reply. Inside an iframe the viewer is a fixed 440 px tall (`--height` changes it; keep ≤ 450 for inline chat) and follows the host's light/dark theme variables.
+   - **Antigravity side pane / browser:** link the file with a `file://` URL or run `open part.html` (macOS) / `xdg-open part.html` (Linux).
      Standalone it fills the window.
 4. Verify before claiming it works (see below).
 
@@ -115,3 +116,7 @@ viewer; re-run `sc_view.py` on them to upgrade.
 - Google `<model-viewer>`: polished, but product-style (no CAD views, edges, section or ortho) and ~1 MB.
 - CDN imports of three.js: smaller file, but break offline use and Antigravity's CSP.
 - Separate `viewer.html` + `model.glb`: the `--link` mode; requires a web server.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE) (includes MIT notice for the bundled Three.js runtime).

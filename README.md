@@ -42,7 +42,7 @@ Do not vendor skills into projects; symlink only if a project truly must pin one
 | [`home-assistant-voice`](home-assistant-voice/SKILL.md) | Home Assistant `2026.x` registry alignment, outbound capability-token STT/Conversation workers, `RED`-tier voice safety gates, and compact local LLM guardrails. |
 | [`webgame-development`](webgame-development/SKILL.md) | Deterministic TypeScript + Vite + Canvas 2D starter, seeded test bridge, Playwright E2E/visual/a11y, headless bots, and FPS budgets. |
 | [`game-requirement`](game-requirement/SKILL.md) | Turn German-language game ideas from kids into testable English specs, kid-readable German mirrors, and open-question lists. |
-| [`solidcraft-model-viewer`](solidcraft-model-viewer/SKILL.md) | Pack a SolidCraft `.sc`/GLB/STL model into one offline, CDN-free HTML 3D viewer (orbit/zoom/pan, CAD views, edges, section, parts, mm size) that works from `file://`, in browsers and inline in Antigravity chat. |
+| [`solidcraft-model-viewer`](solidcraft-model-viewer/README.md) ([`SKILL.md`](solidcraft-model-viewer/SKILL.md)) | Pack a SolidCraft `.sc`/STEP/GLB/STL model into one offline, CDN-free HTML 3D viewer (orbit/zoom/pan, CAD views, edges, section, parts, mm size) for browsers and inline Antigravity chat. |
 
 ### Data pipelines, scraping & presentations
 

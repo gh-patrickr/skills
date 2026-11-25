@@ -30,6 +30,7 @@ from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_TEMPLATE = SKILL_DIR / "assets" / "solidcraft-viewer.html"
+GENERATOR_RE = re.compile(r'<meta\s+name="generator"\s+content="([^"]+)"')
 MODEL_RE = re.compile(r"<!--SC-MODEL-BEGIN-->.*?<!--SC-MODEL-END-->", re.S)
 CONFIG_RE = re.compile(r"<!--SC-CONFIG-BEGIN-->.*?<!--SC-CONFIG-END-->", re.S)
 CONFIG_JSON_RE = re.compile(r"<script[^>]*>(.*?)</script>", re.S)
@@ -120,8 +121,19 @@ def pack(
     return MODEL_RE.sub(lambda _m: render_model(None if link else data, fmt, name), out, count=1)
 
 
+def viewer_version(template_path: Path = DEFAULT_TEMPLATE) -> str:
+    """Return the version string embedded in the viewer template's generator meta tag."""
+    try:
+        head = template_path.read_text(encoding="utf-8")[:2048]
+    except OSError:
+        return "solidcraft-model-viewer (unknown)"
+    m = GENERATOR_RE.search(head)
+    return m.group(1) if m else "solidcraft-model-viewer (unknown)"
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0], formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("--version", action="version", version=viewer_version())
     p.add_argument("input", type=Path, help=".sc/.step/.stp (exported via solidcraft-cli) or .glb/.gltf/.stl")
     p.add_argument("-o", "--output", type=Path, help="output .html (default: next to the input)")
     p.add_argument("--title", help="title shown in the viewer (default: file name)")

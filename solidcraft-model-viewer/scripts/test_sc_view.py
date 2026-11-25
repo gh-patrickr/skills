@@ -149,6 +149,51 @@ class CliTests(unittest.TestCase):
         with tempfile.NamedTemporaryFile(suffix=".txt") as f:
             self.assertEqual(self.run_cli(f.name).returncode, 2)
 
+    def test_cli_version(self):
+        res = self.run_cli("--version")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("solidcraft-model-viewer", res.stdout)
+        self.assertIn("three.js", res.stdout)
+
+
+class DocsAndInstallerTests(unittest.TestCase):
+    SKILL_DIR = HERE.parent
+
+    def test_readme_relative_links_and_license_exist(self):
+        readme = (self.SKILL_DIR / "README.md").read_text(encoding="utf-8")
+        self.assertTrue((self.SKILL_DIR / "LICENSE").is_file())
+        for target in re.findall(r"\]\(([^)\s]+)\)", readme):
+            if target.startswith(("http://", "https://", "mailto:", "#", "/")):
+                continue
+            path = target.split("#", 1)[0]
+            self.assertTrue((self.SKILL_DIR / path).exists(), f"broken relative link in README.md: {target}")
+
+    def test_install_script_from_local_source(self):
+        installer = HERE / "install.sh"
+        self.assertTrue(installer.is_file())
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "installed-skill"
+            res = subprocess.run(
+                ["bash", str(installer), "--from", str(self.SKILL_DIR), "--dir", str(dest)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertTrue((dest / "SKILL.md").is_file())
+            self.assertTrue((dest / "README.md").is_file())
+            self.assertTrue((dest / "LICENSE").is_file())
+            self.assertTrue((dest / "assets" / "solidcraft-viewer.html").is_file())
+            self.assertFalse((dest / "src" / "node_modules").exists(), "node_modules must not be copied")
+            out_html = Path(tmp) / "demo.html"
+            pack_res = subprocess.run(
+                [sys.executable, str(dest / "scripts" / "sc_view.py"),
+                 str(dest / "examples" / "demo-bracket.glb"), "-o", str(out_html)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(pack_res.returncode, 0, pack_res.stderr)
+            self.assertTrue(out_html.is_file() and out_html.stat().st_size > 100_000)
+
 
 if __name__ == "__main__":
     unittest.main()
